@@ -1,8 +1,9 @@
 {% extends "base.html" %}
 {% block title %}下载管理{% endblock %}
 {% block content %}
-<main class="container mt-1">
+<div class="content-wrapper">
     <div class="row fade-in">
+        <div class="col-12">
         <div class="card mb-4">
             <div class="card-header">下载管理</div>
             <div class="card-body">
@@ -109,11 +110,12 @@
                 </div>
             </div>
         </div>
+        </div>
 
         <!-- 隐藏的文件输入元素 -->
         <input type="file" class="d-none" id="hiddenFileInput" accept=".torrent,application/x-bittorrent">
     </div>
-</main>
+</div>
 
 <script>
     let sessionId = ''; // 用于存储传输会话ID
@@ -151,20 +153,18 @@
         torrents.forEach(torrent => {
             const isSelected = localStorage.getItem(`selectedTorrent_${torrent.id}`) === 'true';
             const taskItem = document.createElement('div');
-            taskItem.className = `task-item ${isSelected ? 'selected' : ''}`;
+            taskItem.className = `dl-item ${isSelected ? 'selected' : ''}`;
             taskItem.setAttribute('data-id', torrent.id);
             taskItem.onclick = () => toggleSelection(torrent.id, taskItem);
+            const pct = (torrent.percentDone * 100).toFixed(1);
             taskItem.innerHTML = `
-                <div class="task-name">${torrent.name}</div>
-                <div class="task-progress">
-                    <div class="progress">
-                        <div class="progress-bar" role="progressbar" style="width: ${(torrent.percentDone * 100).toFixed(2)}%;" aria-valuenow="${(torrent.percentDone * 100).toFixed(2)}" aria-valuemin="0" aria-valuemax="100">${(torrent.percentDone * 100).toFixed(2)}%</div>
-                    </div>
-                </div>
-                <div class="task-details">
-                    <div><span>状态：</span>${getStatusText(torrent.status)}</div>
-                    <div><span>下载速度：</span>${formatSpeed(torrent.rateDownload)}</div>
-                    <div><span>上传速度：</span>${formatSpeed(torrent.rateUpload)}</div>
+                <div class="dl-name">${torrent.name}</div>
+                <div class="dl-progress"><div class="dl-progress-fill" style="width:${pct}%"></div></div>
+                <div class="dl-meta">
+                    <span class="dl-meta-item dl-status-${getStatusColor(torrent.status)}"><span class="dl-label">状态</span>${getStatusText(torrent.status)}</span>
+                    <span class="dl-meta-item dl-status-${getStatusColor(torrent.status)}"><span class="dl-label">下载</span>${formatSpeed(torrent.rateDownload)}</span>
+                    <span class="dl-meta-item dl-status-${getStatusColor(torrent.status)}"><span class="dl-label">上传</span>${formatSpeed(torrent.rateUpload)}</span>
+                    <span class="dl-meta-item dl-pct dl-status-${getStatusColor(torrent.status)}">${pct}%</span>
                 </div>
             `;
             list.appendChild(taskItem);
@@ -201,6 +201,29 @@
         return statusMap[status] || '未知';
     }
 
+    function getStatusColor(status) {
+        const colorMap = {
+            downloading: 'active',
+            paused_download: 'paused',
+            paused: 'paused',
+            completed: 'done',
+            stopped_upload: 'done',
+            error: 'error',
+            seeding: 'seeding',
+            uploading: 'seeding',
+            checking: 'checking',
+            checking_download: 'checking',
+            queued_download: 'queued',
+            'download pending': 'queued',
+            queued_upload: 'queued',
+            stopped_download: 'stopped',
+            stopped: 'stopped',
+            stalled_download: 'stalled',
+            stalled_upload: 'stalled'
+        };
+        return colorMap[status] || 'default';
+    }
+
     // 切换任务选择状态
     function toggleSelection(torrentId, taskItem) {
         const isSelected = !taskItem.classList.contains('selected');
@@ -210,7 +233,7 @@
 
     // 执行批量操作（启动、暂停、删除）
     function performBulkAction(action) {
-        const selectedIds = Array.from(document.querySelectorAll('.task-item.selected')).map(item => item.getAttribute('data-id'));
+        const selectedIds = Array.from(document.querySelectorAll('.dl-item.selected')).map(item => item.getAttribute('data-id'));
         // console.log("执行操作:", action, "选中的任务ID:", selectedIds); // 添加调试日志
         if (selectedIds.length === 0) {
             showToast('没有选中任务');
@@ -301,7 +324,7 @@
 
     // 复制选中的磁力链接
     async function copySelectedMagnetLinks() {
-        const selectedIds = Array.from(document.querySelectorAll('.task-item.selected')).map(item => item.getAttribute('data-id'));
+        const selectedIds = Array.from(document.querySelectorAll('.dl-item.selected')).map(item => item.getAttribute('data-id'));
         if (selectedIds.length === 0) {
             showToast('没有选中任务');
             return;

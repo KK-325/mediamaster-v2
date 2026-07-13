@@ -5,7 +5,7 @@ import threading
 import requests
 import bcrypt
 import psutil
-from flask import Flask, g, render_template, request, redirect, url_for, jsonify, session, flash, session, Response
+from flask import Flask, g, render_template, request, redirect, url_for, jsonify, session, flash, session, Response, abort
 from functools import wraps
 from werkzeug.exceptions import InternalServerError
 from datetime import timedelta
@@ -3333,6 +3333,87 @@ def perform_update():
     except Exception as e:
         logger.error(f"执行更新失败: {e}")
         return jsonify({"error": "更新过程中发生未知错误，请查看日志了解详情。"}), 500
+
+# ===================== 产品文档路由 =====================
+import urllib.parse
+
+DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'docs')
+DOCS_SUBDIR = '使用帮助及常见问题'
+
+
+def _scan_docs_tree():
+    """扫描 docs 目录结构，返回嵌套的目录树 JSON。"""
+    def scan_dir(dir_path, rel_prefix=''):
+        items = []
+        try:
+            entries = sorted(os.listdir(dir_path))
+        except OSError:
+            return items
+        # 先文件，后文件夹
+        subdirs = []
+        files = []
+        for name in entries:
+            full = os.path.join(dir_path, name)
+            if os.path.isdir(full):
+                subdirs.append(name)
+            elif name.lower().endswith('.md'):
+                files.append(name)
+        for name in files:
+            child_rel = f"{rel_prefix}{name}" if rel_prefix else name
+            title = name[:-3]  # 去掉 .md
+            items.append({
+                'type': 'file',
+                'name': title,
+                'path': child_rel,
+            })
+        for name in subdirs:
+            full = os.path.join(dir_path, name)
+            child_rel = f"{rel_prefix}{name}" if rel_prefix else name
+            children = scan_dir(full, f"{child_rel}/")
+            items.append({
+                'type': 'dir',
+                'name': name,
+                'path': child_rel,
+                'children': children
+            })
+        return items
+
+    if not os.path.isdir(DOCS_DIR):
+        return []
+    return scan_dir(DOCS_DIR)
+
+
+@app.route('/docs')
+def docs_page():
+    return render_template('docs.html')
+
+
+@app.route('/docs/api/list')
+def docs_api_list():
+    tree = _scan_docs_tree()
+    from flask import jsonify as _jsonify
+    return _jsonify({'tree': tree})
+
+
+@app.route('/docs/api/content/<path:doc_path>')
+def docs_api_content(doc_path):
+    doc_path = urllib.parse.unquote(doc_path)
+    # 防目录穿越
+    if '..' in doc_path or doc_path.startswith('/') or doc_path.startswith('\\'):
+        abort(404)
+    full_path = os.path.normpath(os.path.join(DOCS_DIR, doc_path))
+    if not full_path.startswith(os.path.normpath(DOCS_DIR)):
+        abort(404)
+    if not os.path.isfile(full_path) or not full_path.lower().endswith('.md'):
+        abort(404)
+    try:
+        with open(full_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+    except Exception:
+        abort(404)
+    from flask import jsonify as _jsonify
+    return _jsonify({'content': content, 'title': os.path.splitext(os.path.basename(doc_path))[0]})
+
 
 if __name__ == '__main__':
     logger.info("程序已启动")

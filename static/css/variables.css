@@ -1,0 +1,224 @@
+/* ============================================================
+   MediaMaster CSS 设计系统 - CSS 自定义属性（CSS Variables）
+   日间/夜间模式配色方案 - 年轻简约大气主题
+   ============================================================ */
+
+/* ---------- 日间模式（默认） ---------- */
+:root {
+    /* 年轻简约的蓝色主色调 */
+    --primary: #3498db;           /* 清新蓝 */
+    --primary-hover: #2980b9;     /* 深一度的蓝 */
+    --primary-light: rgba(52, 152, 219, 0.1);
+    --primary-dark: #1a5276;
+
+    /* 辅助强调色 - 活力橙 */
+    --accent: #e74c3c;            /* 活力红橙 */
+    --accent-hover: #c0392b;
+    --accent-light: rgba(231, 76, 60, 0.1);
+
+    /* 成功/警告/危险 */
+    --success: #2ecc71;           /* 清新绿 */
+    --success-light: rgba(46, 204, 113, 0.1);
+    --warning: #f39c12;           /* 温暖黄 */
+    --warning-light: rgba(243, 156, 18, 0.08);
+    --danger: #e74c3c;           /* 活力红 */
+    --danger-light: rgba(231, 76, 60, 0.08);
+
+    /* 侧边栏 - 日间浅色底 + 深色文字 */
+    --sidebar-bg: #edf2f7;        /* 浅蓝灰底 */
+    --sidebar-bg-light: #f4f7fb;  /* 更浅蓝灰 */
+    --sidebar-hover: #dce6f0;     /* 悬停浅蓝 */
+    --sidebar-active: #c8d8e8;    /* 激活浅蓝 */
+    --sidebar-accent: #3db8b0;    /* 蓝绿色强调 */
+    --sidebar-accent-light: rgba(61, 184, 176, 0.12);
+    --sidebar-active-shadow: 0 3px 12px rgba(61, 184, 176, 0.35);
+    --sidebar-text: #1e2d3d;      /* 深蓝黑 */
+    --sidebar-text-active: #0d1a26; /* 更深蓝黑 */
+    --sidebar-divider: rgba(0, 0, 0, 0.08);
+    --sidebar-user-hover: rgba(61, 184, 176, 0.06);
+    --sidebar-version: #4a5a6a;          /* 版本信息 - 中灰蓝 */
+    --sidebar-version-hover: #3db8b0;
+    --sidebar-logo-text: #1a3a4a;
+    --theme-toggle-bg: rgba(0, 0, 0, 0.04);
+    --theme-toggle-hover: rgba(61, 184, 176, 0.12);
+    --theme-toggle-border: rgba(0, 0, 0, 0.10);
+
+    /* 卡片 - 简约白色 */
+    --card-bg: #ffffff;
+    --card-header-bg: #3498db;    /* 蓝色头部 */
+    --card-header-text: #ffffff;
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --card-shadow-hover: 0 6px 16px rgba(52, 152, 219, 0.15);
+
+    /* 页面背景与文字 */
+    --body-bg: #f8f9fa;           /* 极浅灰 */
+    --text-primary: #212529;      /* 深灰色 - 更接近原生黑色 */
+    --text-secondary: #495057;    /* 中等深灰色 */
+    --text-muted: #6c757d;        /* 浅灰色 - 用于次要文本 */
+    --text-light: #f8f9fa;        /* 浅色文字 - 用于深色背景 */
+
+    /* 边框 */
+    --border-color: #e9ecef;
+    --border-light: #f1f3f5;
+
+    /* 圆角 */
+    --radius: 10px;
+    --radius-sm: 6px;
+    --radius-xs: 4px;
+
+    /* 过渡 */
+    --transition: 0.2s ease;
+
+    /* 尺寸 */
+    --navbar-height: 56px;
+    --sidebar-width: 240px;
+
+    /* 表格 */
+    --table-header-bg: #f8f9fa;
+    --table-hover-bg: #f1f8ff;
+    --table-stripe-bg: #f9fbfd;
+
+    /* 输入框 */
+    --input-bg: #ffffff;
+    --input-border: #dee2e6;
+    --input-focus-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
+
+    /* 模态框 */
+    --modal-overlay: rgba(0, 0, 0, 0.4);
+    --modal-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+
+    /* 加载 */
+    --loader-overlay: rgba(248, 249, 250, 0.9);
+    --loader-color: #3498db;
+
+    /* Toast */
+    --toast-bg: #ffffff;
+    --toast-border: #dee2e6;
+
+    /* 导航栏 */
+    --navbar-bg: #ffffff;
+    --navbar-border: #e9ecef;
+    --navbar-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+    --navbar-icon-color: #495057;        /* 顶栏图标按钮颜色（日间） */
+    --navbar-icon-hover: #212529;        /* 顶栏图标按钮悬停颜色（日间） */
+
+    /* 按钮 */
+    --btn-gradient: linear-gradient(135deg, #3db8b0, #3498db);
+    --btn-gradient-hover: linear-gradient(135deg, #35a69e, #2980b9);
+    --btn-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+    --btn-shadow-hover: 0 4px 16px rgba(52, 152, 219, 0.35);
+}
+
+/* ---------- 夜间模式（深色方案） ---------- */
+[data-theme="dark"] {
+    /* 主色调 - 清新蓝 */
+    --primary: #5dade2;           /* 浅蓝 */
+    --primary-hover: #519bd3;
+    --primary-light: rgba(93, 173, 226, 0.15);
+    --primary-dark: #2980b9;
+
+    /* 辅助强调色 - 活力橙红 */
+    --accent: #ec7063;            /* 浅红橙 */
+    --accent-hover: #e74c3c;
+    --accent-light: rgba(236, 112, 99, 0.15);
+
+    /* 成功/警告/危险 */
+    --success: #58d68d;           /* 浅绿 */
+    --success-light: rgba(88, 214, 141, 0.15);
+    --warning: #f7dc6f;           /* 浅黄 */
+    --warning-light: rgba(247, 220, 111, 0.15);
+    --danger: #f1948a;           /* 浅红 */
+    --danger-light: rgba(241, 148, 138, 0.12);
+
+    /* 侧边栏 - 深蓝绿配色 */
+    --sidebar-bg: #0e1f2b;        /* 深蓝黑底 */
+    --sidebar-bg-light: #122838;  /* 稍浅蓝黑底 */
+    --sidebar-hover: #1b3444;     /* 悬停蓝绿 */
+    --sidebar-active: #224458;    /* 激活蓝绿 */
+    --sidebar-accent: #4dd4c8;    /* 蓝绿色强调（夜间更亮） */
+    --sidebar-accent-light: rgba(77, 212, 200, 0.12);
+    --sidebar-active-shadow: 0 3px 12px rgba(77, 212, 200, 0.35);
+    --sidebar-text: #7d9eb0;      /* 柔和蓝灰 */
+    --sidebar-text-active: #d8f0f5;
+    --sidebar-divider: rgba(125, 158, 176, 0.10);
+    --sidebar-user-hover: rgba(77, 212, 200, 0.06);
+    --sidebar-version: #6893a8;         /* 版本信息颜色 */
+    --sidebar-version-hover: #4dd4c8;
+    --sidebar-logo-text: #d8f0f5;
+    --theme-toggle-bg: rgba(125, 158, 176, 0.08);
+    --theme-toggle-hover: rgba(77, 212, 200, 0.15);
+    --theme-toggle-border: rgba(125, 158, 176, 0.14);
+
+    /* 卡片 - 深色表面 */
+    --card-bg: #1e2a36;           /* 深灰蓝 */
+    --card-header-bg: #2c3e50;    /* 深灰蓝头部 */
+    --card-header-text: #ecf0f1;  /* 浅灰白 */
+    --card-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    --card-shadow-hover: 0 6px 20px rgba(41, 128, 185, 0.2);
+
+    /* 页面背景与文字 */
+    --body-bg: #121c26;           /* 深蓝黑 */
+    --text-primary: #ecf0f1;      /* 浅灰白 - 主要文字 */
+    --text-secondary: #bdc3c7;    /* 中等灰 - 次要文字 */
+    --text-muted: #6c757d;        /* 标准浅灰色 - 提示文字 */
+    --text-light: #f8f9fa;        /* 浅色文字 - 用于深色背景 */
+
+    /* 边框 */
+    --border-color: #2c3e50;
+    --border-light: #233140;
+
+    /* 表格 */
+    --table-header-bg: #233140;
+    --table-hover-bg: #2a3a4a;
+    --table-stripe-bg: #202d3a;
+
+    /* 输入框 */
+    --input-bg: #233140;
+    --input-border: #2c3e50;
+    --input-focus-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+
+    /* 模态框 */
+    --modal-overlay: rgba(0, 0, 0, 0.7);
+    --modal-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+
+    /* 加载 */
+    --loader-overlay: rgba(18, 28, 38, 0.9);
+    --loader-color: #5dade2;
+
+    /* Toast */
+    --toast-bg: #233140;
+    --toast-border: #2c3e50;
+
+    /* 导航栏 */
+    --navbar-bg: #1e2a36;
+    --navbar-border: #2c3e50;
+    --navbar-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+    --navbar-icon-color: #bdc3c7;        /* 顶栏图标按钮颜色（夜间） */
+    --navbar-icon-hover: #ecf0f1;        /* 顶栏图标按钮悬停颜色（夜间） */
+
+    /* 按钮 */
+    --btn-gradient: linear-gradient(135deg, #4dd4c8, #5dade2);
+    --btn-gradient-hover: linear-gradient(135deg, #3db8b0, #519bd3);
+    --btn-shadow: 0 2px 8px rgba(93, 173, 226, 0.2);
+    --btn-shadow-hover: 0 4px 16px rgba(93, 173, 226, 0.35);
+}
+
+/* ---------- 全局过渡 ---------- */
+*,
+*::before,
+*::after {
+    transition: background-color 0.3s ease,
+                border-color 0.3s ease,
+                color 0.3s ease,
+                box-shadow 0.3s ease;
+}
+
+/* 排除不需要过渡的元素 */
+.no-transition,
+.no-transition *,
+.offcanvas,
+.offcanvas *,
+.modal,
+.modal * {
+    transition: none !important;
+}

@@ -1,0 +1,61 @@
+/* ============================================================
+   MediaMaster 500 错误页面样式
+   TMDB 深蓝海军色系 - #032541 / #01b4e4 / #90cea1
+   ============================================================ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    margin: 0; padding: 0;
+    background: linear-gradient(135deg, #032541 0%, #01b4e4 100%);
+    color: #fff;
+    display: flex; justify-content: center; align-items: center;
+    height: 100vh; min-height: 100vh;
+}
+
+.error-container {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    padding: 48px 56px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    text-align: center;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+}
+
+.error-container h1 {
+    margin: 0 0 8px;
+    font-size: 72px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #01b4e4, #90cea1);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.error-container p {
+    margin: 0 0 24px;
+    font-size: 16px;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.6;
+}
+
+.error-container a {
+    display: inline-block;
+    padding: 10px 28px;
+    background: linear-gradient(135deg, #01b4e4, #90cea1);
+    color: #fff;
+    text-decoration: none;
+    border-radius: 10px;
+    font-weight: 500;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.error-container a:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(1, 180, 228, 0.5);
+}

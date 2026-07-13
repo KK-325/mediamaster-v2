@@ -1,0 +1,374 @@
+/* ============================================================
+   MediaMaster UI 组件样式
+   统一按钮风格、模块动画、细节优化
+   依赖 variables.css 的 CSS 自定义属性
+   ============================================================ */
+
+/* ====== 统一按钮系统（dl- 前缀） ====== */
+
+/* 基础按钮 - 去除 Bootstrap 默认装饰 */
+.dl-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 7px 16px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 0.2px;
+    line-height: 1.4;
+    text-decoration: none;
+    white-space: nowrap;
+    background: transparent;
+    color: var(--text-primary);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.dl-btn:hover {
+    transform: translateY(-1px);
+}
+
+.dl-btn:active {
+    transform: translateY(0);
+}
+
+/* 小尺寸 */
+.dl-btn-sm {
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+}
+
+/* 大尺寸 */
+.dl-btn-lg {
+    font-size: 15px;
+    padding: 10px 24px;
+    border-radius: 10px;
+}
+
+/* --- 主要按钮（实心） --- */
+.dl-btn-primary {
+    background: var(--btn-gradient);
+    color: #fff;
+    box-shadow: var(--btn-shadow);
+}
+.dl-btn-primary:hover {
+    background: var(--btn-gradient-hover);
+    box-shadow: var(--btn-shadow-hover);
+    color: #fff;
+}
+.dl-btn-primary:active {
+    box-shadow: var(--btn-shadow);
+}
+
+/* --- 次要按钮（描边） --- */
+.dl-btn-outline {
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+    background: transparent;
+}
+.dl-btn-outline:hover {
+    color: var(--primary);
+    border-color: var(--primary);
+    background: var(--primary-light);
+}
+
+/* --- 危险按钮 --- */
+.dl-btn-danger {
+    color: var(--danger);
+    border: 1px solid transparent;
+    background: transparent;
+}
+.dl-btn-danger:hover {
+    color: #fff;
+    background: var(--danger);
+    border-color: var(--danger);
+}
+
+/* --- 成功按钮 --- */
+.dl-btn-success {
+    background: var(--success);
+    color: #fff;
+}
+.dl-btn-success:hover {
+    opacity: 0.9;
+    box-shadow: 0 4px 12px rgba(46, 204, 113, 0.3);
+}
+
+/* --- 幽灵按钮（无边框无背景） --- */
+.dl-btn-ghost {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+}
+.dl-btn-ghost:hover {
+    color: var(--primary);
+    background: var(--primary-light);
+}
+
+/* --- 图标按钮 --- */
+.dl-btn-icon {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.dl-btn-icon:hover {
+    color: var(--primary);
+    background: var(--primary-light);
+    transform: translateY(-1px);
+}
+.dl-btn-icon:active {
+    transform: scale(0.95);
+}
+
+/* ====== 模块动画系统 ====== */
+
+/* 页面淡入 */
+.dl-fade-in {
+    animation: dlFadeIn 0.5s ease both;
+}
+
+/* 卡片滑入 */
+.dl-slide-up {
+    animation: dlSlideUp 0.5s ease both;
+}
+
+/* 交错延迟 */
+.dl-stagger-1 { animation-delay: 0.05s; }
+.dl-stagger-2 { animation-delay: 0.10s; }
+.dl-stagger-3 { animation-delay: 0.15s; }
+.dl-stagger-4 { animation-delay: 0.20s; }
+.dl-stagger-5 { animation-delay: 0.25s; }
+.dl-stagger-6 { animation-delay: 0.30s; }
+
+@keyframes dlFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes dlSlideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 卡片容器动效 --- */
+.dl-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    background: var(--card-bg);
+    box-shadow: var(--card-shadow);
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+    overflow: hidden;
+}
+.dl-card:hover {
+    box-shadow: var(--card-shadow-hover);
+    transform: translateY(-2px);
+}
+
+/* --- 表格行微动效 --- */
+.dl-table-row {
+    transition: background-color 0.15s ease;
+}
+
+/* --- Hover 上浮效果 --- */
+.dl-hover-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+.dl-hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+[data-theme="dark"] .dl-hover-lift:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+/* --- Hover 缩放效果 --- */
+.dl-hover-scale {
+    transition: transform 0.25s ease;
+}
+.dl-hover-scale:hover {
+    transform: scale(1.03);
+}
+
+/* --- 淡入淡出过渡 --- */
+.dl-transition {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+/* ====== 细节优化 ====== */
+
+/* 统一卡片头部（替代 card-header 的硬编码渐变） */
+.dl-section-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 18px;
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    letter-spacing: 0.2px;
+}
+
+/* 模块分区标题 */
+.dl-section-title {
+    border-left: 4px solid var(--primary);
+    padding-left: 12px;
+    margin: 24px 0 16px;
+    font-weight: 600;
+    font-size: 1rem;
+    letter-spacing: 0.2px;
+    color: var(--text-primary);
+}
+
+/* 统计卡片 */
+.dl-stat-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.dl-stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+[data-theme="dark"] .dl-stat-card:hover {
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* 资源卡片 */
+.dl-resource-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+.dl-resource-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* 标签/徽章优化 */
+.dl-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.2px;
+}
+.dl-badge-primary {
+    background: var(--primary-light);
+    color: var(--primary);
+}
+.dl-badge-success {
+    background: var(--success-light);
+    color: var(--success);
+}
+.dl-badge-danger {
+    background: var(--danger-light);
+    color: var(--danger);
+}
+.dl-badge-warning {
+    background: var(--warning-light);
+    color: var(--warning);
+}
+
+/* 输入框组 */
+.dl-input {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--input-bg);
+    border: 1px solid var(--input-border);
+    border-radius: var(--radius-xs);
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.dl-input:focus {
+    border-color: var(--primary);
+    box-shadow: var(--input-focus-shadow);
+}
+.dl-input::placeholder {
+    color: var(--text-muted);
+}
+
+/* ====== 页面级别卡片动画 ====== */
+
+/* 为 Bootstrap card 添加增强动画 */
+.card {
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
+}
+.card:hover {
+    transform: translateY(-1px);
+}
+
+/* 统计项动画 */
+.stat-item {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 资源项动画 */
+.resource-item {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 媒体卡片动画增强 */
+.media-card {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 海报项动画 */
+.poster-item {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 下载项动画 */
+.dl-item {
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.dl-item:hover {
+    transform: translateX(2px);
+}
+
+/* 设置开关卡片 */
+.site-index-switch,
+.scrape-setting,
+.metadata-enhance-setting {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+.site-index-switch:hover,
+.scrape-setting:hover,
+.metadata-enhance-setting:hover {
+    border-color: var(--primary);
+    box-shadow: 0 2px 8px rgba(52, 152, 219, 0.1);
+    transform: translateY(-1px);
+}

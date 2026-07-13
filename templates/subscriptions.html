@@ -1,91 +1,7 @@
 {% extends "base.html" %}
 {% block title %}正在订阅{% endblock %}
 {% block content %}
-<style>
-.douban-badge {
-    font-size: 0.65rem;
-}
-
-.hover-lift {
-    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-}
-
-.hover-lift:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
-}
-
-.modal-content {
-    border-radius: 0.75rem;
-}
-
-.modal-header {
-    border-top-left-radius: 0.75rem;
-    border-top-right-radius: 0.75rem;
-}
-
-.card-body {
-    border-radius: 10px;
-}
-
-.missing-episodes-badge {
-    max-width: 170px;
-}
-
-.status-badge {
-    font-size: 0.7rem;
-    padding: 0.25em 0.4em;
-}
-
-/* 修改：卡片右上角定位 */
-.card-status-badge {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    z-index: 10;
-}
-
-/* 新增：自定义状态颜色 */
-.want-status {
-    background-color: #23a2df !important;
-}
-
-.watching-status {
-    background-color: #44b549 !important;
-}
-
-.watched-status {
-    background-color: #6c757d !important;
-}
-
-@media (min-width: 768px) {
-    .missing-episodes-badge {
-        max-width: 700px;
-    }
-}
-
-@media (max-width: 768px) {
-    .modal-dialog {
-        margin: 0.5rem;
-        max-width: calc(100% - 1rem);
-    }
-    .card-body .text-truncate {
-        max-width: 170px;
-    }
-    
-    /* 确保按钮在小屏幕上对齐到右下角 */
-    .card-body .d-flex.flex-column.flex-md-row {
-        flex-direction: column;
-    }
-    
-    .card-body .ms-md-3.mt-2 {
-        align-self: flex-end;
-        margin-left: 0;
-    }
-
-}
-</style>
-<main class="container mt-1">
+<div class="content-wrapper">
     <div class="row fade-in">
         <div class="d-flex justify-content-end mb-3">
             <div class="ml-auto">
@@ -101,6 +17,7 @@
             </div>
         </div>
 
+        <div class="col-12">
         <!-- 正在订阅的电影 -->
         <div class="card mb-4">
             <div class="card-header">正在订阅的电影</div>
@@ -177,8 +94,9 @@
                 {% endif %}
             </div>
         </div>
+        </div>
     </div>
-</main>
+</div>
 
 <!-- 添加订阅模态框 -->
 <div class="modal fade" id="addSubscriptionModal" tabindex="-1" aria-labelledby="addSubscriptionModalLabel" aria-hidden="true">

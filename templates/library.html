@@ -5,139 +5,7 @@
 {% block title %}媒体库{% endblock %}
 {% block content %}
 
-<style>
-    /* 响应式设计 */
-    @media (max-width: 768px) {
-        .modal-header {
-            flex-direction: column;
-        }
-    }
-    
-    /* 分组标题 */
-    .section-title {        
-        border-left: 4px solid #4770dc;        
-        padding-left: 10px;        
-        margin: 20px 0 15px 0;        
-        font-weight: 600;
-    }
-
-    /* 演员和导演信息样式 */
-    .modal-credits {
-        margin-top: 20px;
-    }
-
-    .credits-section h5 {
-        margin-bottom: 15px;
-    }
-
-    .persons-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 12px; /* 稍微减小间距 */
-    }
-
-    .person-card {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        width: 65px; /* 减小卡片宽度 */
-        text-align: center;
-    }
-
-    .person-image {
-        width: 50px; /* 减小头像尺寸 */
-        height: 50px;
-        border-radius: 50%;
-        overflow: hidden;
-        margin-bottom: 6px; /* 减小间距 */
-    }
-
-    .person-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-
-    .person-info {
-        font-size: 0.7rem; /* 减小整体字体大小 */
-        width: 100%;
-    }
-
-    .person-name {
-        font-weight: 600;
-        margin-bottom: 2px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        width: 100%;
-        font-size: 0.75rem; /* 调整名字字体大小 */
-    }
-
-    .person-role {
-        color: #666;
-        font-size: 0.65rem; /* 调整角色字体大小 */
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        width: 100%;
-    }
-
-    /* 小屏幕设备适配 */
-    @media (max-width: 768px) {
-        .person-card {
-            width: 55px; /* 进一步减小宽度 */
-        }
-        
-        .person-image {
-            width: 40px;
-            height: 40px;
-        }
-        
-        .person-info {
-            font-size: 0.65rem;
-        }
-        
-        .person-name {
-            font-size: 0.7rem;
-        }
-        
-        .person-role {
-            font-size: 0.55rem;
-        }
-        
-        .persons-list {
-            gap: 10px;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .person-card {
-            width: 50px;
-        }
-        
-        .person-image {
-            width: 35px;
-            height: 35px;
-        }
-        
-        .person-info {
-            font-size: 0.6rem;
-        }
-        
-        .person-name {
-            font-size: 0.65rem;
-        }
-        
-        .person-role {
-            font-size: 0.5rem;
-        }
-        
-        .persons-list {
-            gap: 8px;
-        }
-    }
-</style>
-
+<div class="content-wrapper">
     {% if media_type == 'movies' %}
         <h3 class="section-title">共计 {{ total_movies }} 部影片</h3>
         <div class="poster-wall-container">
@@ -442,7 +310,7 @@
                     <div class="person-card text-center">
                         <div class="person-image mx-auto mb-2">
                             <img src="${profileUrl}" alt="${director.name}" class="rounded-circle" 
-                                style="width: 50px; height: 50px; object-fit: cover;"
+                                style="object-fit: cover;"
                                 onerror="this.src='/static/img/avatar.png'">
                         </div>
                         <div class="person-info">
@@ -485,7 +353,7 @@
                     <div class="person-card text-center">
                         <div class="person-image mx-auto mb-2">
                             <img src="${profileUrl}" alt="${person.name}" class="rounded-circle" 
-                                style="width: 50px; height: 50px; object-fit: cover;"
+                                style="object-fit: cover;"
                                 onerror="this.src='/static/img/avatar.png'">
                         </div>
                         <div class="person-info">
@@ -521,4 +389,5 @@
         $('#mediaDetailsModal').modal('hide');
     }
 </script>
+</div>
 {% endblock %}

@@ -1,295 +1,8 @@
 {% extends "base.html" %}
 {% block title %}系统设置{% endblock %}
 {% block content %}
-<style>
-    .fixed-top-bar {
-        margin-top: 50px;
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        z-index: 100;
-        background-color: rgba(248, 249, 250, 0.9);
-        backdrop-filter: blur(10px);
-        padding: 0.5rem 0.5rem;
-        border-bottom: 1px solid #dee2e6;
-        box-shadow: 0 2px 4px rgba(0,0,0,.05);
-    }
-    
-    .card-header h5 {
-        font-size: clamp(12px, 1.2vw, 16px) !important;
-    }
-    
-    .form-text {
-        font-size: clamp(8px, 1.0vw, 12px) !important;
-    }
-    
-    /* 为页面内容添加顶部边距，避免被固定按钮栏遮挡 */
-    .main-content {
-        margin-top: 20px;
-    }
-    
-    .setting-item .form-label,
-    .setting-item .form-control,
-    .setting-item .form-select,
-    .modal-body .form-label,
-    .modal-body .form-control,
-    .modal-body .form-select {
-        font-size: clamp(10px, 1.0vw, 14px) !important;
-    }
-    
-    .directory-selector-btn {
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
-    }
-    
-    .directory-list .list-group-item {
-        border-radius: 0.375rem;
-        margin-bottom: 0.25rem;
-    }
-    
-    .directory-list .list-group-item:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .directory-list .list-group-item i {
-        color: #ffc107;
-    }
-    
-    /* 简约统一的目录加载器样式 */
-    .directory-loader {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding: 20px;
-    }
-    
-    .directory-loader .spinner {
-        width: 20px;
-        height: 20px;
-        border: 2px solid #f3f3f3;
-        border-top: 2px solid #0d6efd;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-    
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    /* 使用Bootstrap的form-switch样式 */
-    .form-check-input:checked {
-        background-color: #0d6efd;
-        border-color: #0d6efd;
-    }
-    
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: calc(clamp(14px, 1.4vw, 18px) * 1.7);
-        height: calc(clamp(14px, 1.4vw, 18px) * 0.9);
-        margin-top: calc(clamp(14px, 1.4vw, 18px) * 0.1);
-    }
-
-    .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ccc;
-        transition: .4s;
-        border-radius: calc(clamp(14px, 1.4vw, 18px) * 0.9);
-    }
-
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: calc(clamp(14px, 1.4vw, 18px) * 0.9 - 6px);
-        width: calc(clamp(14px, 1.4vw, 18px) * 0.9 - 6px);
-        left: 3px;
-        bottom: 3px;
-        background-color: white;
-        transition: .4s;
-        border-radius: 50%;
-    }
-
-    input:checked + .slider {
-        background-color: #0d6efd;
-    }
-
-    input:checked + .slider:before {
-        transform: translateX(calc(clamp(14px, 1.4vw, 18px) * 0.8));
-    }
-    
-    /* 站点开关样式 */
-    .site-switches {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-        gap: 10px;
-    }
-    
-    /* 站点索引开关网格布局 - 修改为与媒体元数据刮削相同的布局 */
-    .site-index-switches {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 15px;
-    }
-    
-    @media (max-width: 768px) {
-        .site-index-switches {
-            grid-template-columns: 1fr;
-        }
-    }
-    
-    /* 站点索引开关项 - 修改为与 scrape-setting 相同的样式 */
-    .site-index-switch {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 15px;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-        border: 1px solid #e9ecef;
-    }
-    
-    .site-index-switch .form-label {
-        margin: 0;
-        flex-grow: 1;
-        font-weight: normal;
-        margin-right: 15px;
-    }
-    
-    .site-index-switch .switch {
-        margin-left: 15px;
-    }
-    
-    /* 分组标题 */
-    .section-title {
-        border-left: 4px solid #4770dc;
-        padding-left: 10px;
-        margin: 20px 0 15px 0;
-        font-weight: 600;
-    }
-    
-    /* 媒体元数据刮削设置网格布局 */
-    .scrape-settings-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 15px;
-    }
-    
-    @media (max-width: 768px) {
-        .scrape-settings-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-    
-    /* 媒体元数据刮削设置项 */
-    .scrape-setting {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 15px;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-        border: 1px solid #e9ecef;
-    }
-    
-    .scrape-setting .form-label {
-        margin: 0;
-        flex-grow: 1;
-        font-weight: normal;
-        margin-right: 15px;
-    }
-    
-    .scrape-setting .switch {
-        margin-left: 15px;
-    }
-    
-    /* 元数据增强选项网格布局 */
-    .metadata-enhance-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-    }
-    
-    @media (max-width: 768px) {
-        .metadata-enhance-grid {
-            grid-template-columns: 1fr;
-        }
-    }
-    
-    /* 元数据增强选项设置项 */
-    .metadata-enhance-setting {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 10px 15px;
-        background-color: #f8f9fa;
-        border-radius: 5px;
-        border: 1px solid #e9ecef;
-    }
-    
-    .metadata-enhance-setting .form-label {
-        margin: 0;
-        flex-grow: 1;
-        font-weight: normal;
-    }
-    
-    .metadata-enhance-setting .switch {
-        margin-left: 15px;
-    }
-    
-    /* 通用开关容器样式 */
-    .switch-container {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-    }
-    
-    .switch-container .form-label {
-        margin: 0;
-        font-weight: normal;
-    }
-    
-    /* 命名格式帮助文本 */
-    .naming-format-help {
-        background-color: #e9f7fe;
-        border-left: 4px solid #0d6efd;
-        padding: 10px;
-        margin-top: 5px;
-        font-size: 12px;
-    }
-</style>
-<main class="container-fluid px-4 py-4 main-content">
+<div class="content-wrapper settings-page">
     <div class="row g-4">
-        <div class="col-12">
-            <div class="fixed-top-bar">
-                <div class="page-header d-flex justify-content-end align-items-center mb-0">
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-outline-danger" id="resetBtn" data-toggle="tooltip" data-placement="bottom" title="提示：执行重置操作后程序将清除所有配置并重启恢复到默认配置。">
-                            <i class="bi bi-arrow-repeat"></i> 系统重置
-                        </button>
-                        <button type="button" class="btn btn-sm btn-outline-secondary" id="restartBtn" data-toggle="tooltip" data-placement="bottom" title="提示：结束主程序并尝试重启容器。">
-                            <i class="bi bi-bootstrap-reboot"></i> 重启系统
-                        </button>
-                        <button type="submit" class="btn btn-sm btn-primary" form="settingsForm" data-toggle="tooltip" data-placement="bottom" title="提示：某些配置需要重启后才能生效，如保存后未生效请重启系统。">
-                            <i class="bi bi-save"></i> 保存配置
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <div class="col-12">
             <form method="post" action="/save_set" id="settingsForm">
                 <div class="row g-4">
@@ -1098,6 +811,19 @@
         </div>
     </div>
 
+    <!-- 设置操作栏 -->
+    <div class="settings-action-bar">
+        <button type="button" class="btn btn-reset" id="resetBtn" title="执行重置操作后程序将清除所有配置并重启恢复到默认配置">
+            <i class="bi bi-arrow-repeat"></i> <span class="btn-label">系统重置</span>
+        </button>
+        <button type="button" class="btn btn-restart" id="restartBtn" title="结束主程序并尝试重启容器">
+            <i class="bi bi-bootstrap-reboot"></i> <span class="btn-label">重启系统</span>
+        </button>
+        <button type="submit" class="btn btn-save" form="settingsForm" title="某些配置需要重启后才能生效，如保存后未生效请重启系统">
+            <i class="bi bi-save"></i> <span class="btn-label">保存配置</span>
+        </button>
+    </div>
+
     <!-- 加载指示器 -->
     <div class="loader-container" id="loading-overlay">
         <div class="loader"></div>
@@ -1184,7 +910,7 @@
             </div>
         </div>
     </div>
-</main>
+</div>
 
 <script src="/static/js/jquery.min.js"></script>
 <script>

@@ -1,431 +1,8 @@
 {% extends "base.html" %}
 {% block title %}资源搜索{% endblock %}
 {% block content %}
-<style>
-.resource-table {
-    background-color: white;
-}
 
-.resource-table thead th {
-    background-color: white;
-    border-bottom: 2px solid #dee2e6;
-    cursor: pointer;
-    position: relative;
-    padding-right: 20px;
-}
-
-.resource-table tbody td {
-    border-top: 1px solid #dee2e6;
-    background-color: white;
-}
-
-.resource-table tbody tr:hover td {
-    background-color: #f8f9fa;
-}
-
-.sort-indicator {
-    position: absolute;
-    right: 5px;
-    top: 50%;
-    transform: translateY(-50%);
-}
-
-.sort-indicator::before {
-    content: "↕";
-    opacity: 0.3;
-}
-
-.sort-indicator.asc::before {
-    content: "↑";
-    opacity: 1;
-}
-
-.sort-indicator.desc::before {
-    content: "↓";
-    opacity: 1;
-}
-
-/* 响应式海报尺寸 */
-.poster-img {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-}
-
-@media (min-width: 768px) {
-    .poster-img {
-        width: 120px;
-        height: 180px;
-    }
-}
-
-@media (max-width: 767.98px) {
-    .poster-img {
-        width: 100px;
-        height: 150px;
-    }
-}
-
-/* 响应式字体大小 */
-.card-title {
-    font-size: clamp(14px, 1.2vw, 16px) !important;
-    font-weight: bold !important; /* 标题加粗 */
-}
-
-.card-text small {
-    font-size: clamp(12px, 1.2vw, 16px) !important;
-}
-
-.card-text.text-muted {
-    font-size: clamp(10px, 1.2vw, 16px) !important;
-}
-
-/* 卡片阴影效果 */
-.tmdb-result-item {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1), 0 6px 20px rgba(0,0,0,0.1);
-    border: none;
-    margin-bottom: 1rem;
-}
-
-/* 大屏幕左对齐 */
-@media (min-width: 768px) {
-    .tmdb-result-item .card-title,
-    .tmdb-result-item .card-text.mb-1,
-    .tmdb-result-item .card-text.mb-0 {
-        text-align: left !important;
-    }
-}
-
-/* 小屏幕垂直布局 */
-@media (max-width: 767.98px) {
-    .tmdb-result-item .row.g-0 {
-        flex-direction: column;
-    }
-    
-    .tmdb-result-item .col-md-2.col-3,
-    .tmdb-result-item .col-md-8.col-6,
-    .tmdb-result-item .col-md-2.col-3 {
-        width: 100%;
-        text-align: center;
-    }
-    
-    .tmdb-result-item .p-3 {
-        padding: 1rem !important;
-    }
-    
-    .tmdb-result-item .d-flex.align-items-center.justify-content-end {
-        justify-content: center !important;
-    }
-    
-    .tmdb-result-item .card-body {
-        padding: 1rem;
-    }
-    
-    .tmdb-result-item .card-title {
-        margin-top: 0.5rem;
-    }
-    
-    /* 小屏幕上标题和年份类型居中对齐 */
-    .tmdb-result-item .card-title,
-    .tmdb-result-item .card-text.mb-1 {
-        text-align: center !important;
-    }
-    
-    /* 小屏幕上简介左对齐 */
-    .tmdb-result-item .card-text.mb-0 {
-        text-align: left !important;
-    }
-}
-
-/* 季选择模态框样式 */
-.season-modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-}
-
-.season-modal-content {
-    background-color: #fefefe;
-    margin: 15% auto;
-    padding: 20px;
-    border: 1px solid #888;
-    width: 80%;
-    max-width: 500px;
-    border-radius: 5px;
-}
-
-.season-modal-close {
-    color: #aaa;
-    float: right;
-    font-size: 28px;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.season-modal-close:hover {
-    color: black;
-}
-
-.season-list {
-    list-style-type: none;
-    padding: 0;
-}
-
-.season-list li {
-    padding: 10px;
-    margin: 5px 0;
-    background-color: #f8f9fa;
-    border-radius: 3px;
-    cursor: pointer;
-}
-
-.season-list li:hover {
-    background-color: #e9ecef;
-}
-
-/* 可折叠面板样式 */
-.collapse-header {
-    cursor: pointer;
-    background-color: #f8f9fa;
-    padding: 10px 15px;
-    margin-top: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.collapse-header:hover {
-    background-color: #e9ecef;
-}
-
-.collapse-icon {
-    transition: transform 0.2s;
-}
-
-.collapse-header:not(.collapsed) .collapse-icon {
-    transform: rotate(180deg);
-}
-
-.results-container {
-    border-top: none;
-    border-radius: 0 0 0.375rem 0.375rem;
-    margin-bottom: 15px;
-}
-
-/* 复选框筛选器样式 */
-.checkbox-filters {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.checkbox-filter-group {
-    display: flex;
-    margin-right: 15px;
-}
-
-.checkbox-filter-group label {
-    margin-left: 5px;
-    margin-bottom: 0;
-    font-weight: normal;
-}
-
-/* 隐藏原来的按钮 */
-.site-filter-btn, .resolution-filter-btn {
-    display: none;
-}
-
-  /* 进度条样式 */
-  .progress-container {
-      margin: 10px 0;
-  }
-
-  .progress-bar {
-      height: 15px;
-      background-color: #f0f0f0;
-      border-radius: 4px;
-      overflow: hidden;
-      background-image: none;
-  }
-
-  .progress-fill {
-      height: 100%;
-      width: 0%;
-      background-color: #0d6efd;
-      background-image: linear-gradient(
-          45deg, 
-          rgba(255, 255, 255, .15) 25%, 
-          transparent 25%, 
-          transparent 50%, 
-          rgba(255, 255, 255, .15) 50%, 
-          rgba(255, 255, 255, .15) 75%, 
-          transparent 75%, 
-          transparent
-      );
-      background-size: 1rem 1rem;
-      animation: 1s steps(20) infinite barberpole;
-      transition: width 0.3s ease;
-  }
-
-  @keyframes barberpole {
-      from { background-position: 0 0; }
-      to { background-position: 1rem 0; }
-  }
-
-.progress-text {
-    text-align: center;
-    font-size: 14px;
-    margin-top: 5px;
-}
-
-/* 日志窗口样式 */
-.log-window {
-    position: fixed;
-    bottom: 20px;
-    right: 2px;
-    width: 400px;
-    height: 300px;
-    background-color: #fff;
-    border: 1px solid #dee2e6;
-    border-radius: 5px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    z-index: 1000;
-    display: none;
-    flex-direction: column;
-}
-
-.log-window.collapsed {
-    width: 40px;
-    height: 40px;
-    bottom: 20px;
-    right: 20px;
-    cursor: pointer;
-}
-
-.log-window.collapsed .log-window-body,
-.log-window.collapsed .log-window-title,
-.log-window.collapsed .log-window-controls {
-    display: none;
-}
-
-.log-window-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 8px 12px;
-    background-color: #f8f9fa;
-    border-bottom: 1px solid #dee2e6;
-    border-radius: 5px 5px 0 0;
-}
-
-.log-window.collapsed .log-window-header {
-    justify-content: center;
-    padding: 0;
-    border: none;
-    background: none;
-    height: 100%;
-}
-
-.log-window-title {
-    margin: 0;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.log-window-controls {
-    display: flex;
-    gap: 5px;
-}
-
-.log-window-body {
-    flex: 1;
-    font-family: 'Courier New', monospace;
-    font-size: clamp(8px, 1.2vw, 12px);
-    background-color: rgb(33, 37, 41);
-    color: rgb(248, 249, 250);
-    padding: 5px;
-    word-wrap: break-word; /* 长单词换行 */
-}
-
-.log-line {
-    margin: 0 0 5px 0;
-    word-break: break-all; /* 强制换行 */
-    white-space: normal; /* 允许正常换行 */
-    line-height: 1.5;
-}
-
-/* 收起状态下的展开图标 */
-.log-window.collapsed::before {
-    content: "≡";
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 100%;
-    height: 100%;
-    color: #000;
-}
-
-.log-window.collapsed:hover {
-    background-color: #f0f0f0;
-}
-
-/* 确保收起状态下的点击区域 */
-.log-window.collapsed .log-window-header {
-    width: 100%;
-    height: 100%;
-}
-
-/* 热度和文件大小显示样式 */
-.info-badge {
-    display: inline-block;
-    padding: 0.25em 0.4em;
-    font-size: 75%;
-    font-weight: 700;
-    line-height: 1;
-    text-align: center;
-    white-space: nowrap;
-    vertical-align: baseline;
-    border-radius: 0.25rem;
-    color: #fff;
-    margin: 2px;
-}
-
-.popularity-badge {
-    background-color: #6c757d;
-}
-
-.popularity-high {
-    background-color: #28a745; /* 绿色 */
-}
-
-.popularity-medium {
-    background-color: #ffc107; /* 黄色 */
-    color: #212529;
-}
-
-.popularity-low {
-    background-color: #dc3545; /* 红色 */
-}
-
-.size-badge {
-    background-color: #0d6efd; /* 蓝色 */
-}
-
-/* 信息列样式 */
-.info-col {
-    text-align: center;
-    vertical-align: middle;
-}
-</style>
-
-<main class="container mt-1">
+<div class="content-wrapper">
     <div class="row fade-in">
         <!-- 加载指示器 -->
         <div class="loader-container">
@@ -433,30 +10,34 @@
             <div class="loading-text">请求中，请稍后...</div>
         </div>
 
-        <div class="card mb-4">
-            <div class="card-header">资源搜索</div>
-            <div class="card-body">
-                <form id="search-form">
-                    <div class="mb-3" style="font-size: clamp(12px, 1.2vw, 16px);">
-                        <label for="keyword" class="form-label">关键词</label>
-                        <input class="form-control" type="text" id="keyword" placeholder="媒体标题关键词" required>
-                    </div>
-                    <button type="submit" class="btn btn-sm btn-outline-success search-button">搜索</button>
-                </form>
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header">资源搜索</div>
+                <div class="card-body">
+                    <form id="search-form">
+                        <div class="mb-3" style="font-size: clamp(12px, 1.2vw, 16px);">
+                            <label for="keyword" class="form-label">关键词</label>
+                            <input class="form-control" type="text" id="keyword" placeholder="媒体标题关键词" required>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-success search-button">搜索</button>
+                    </form>
+                </div>
             </div>
         </div>
 
         <!-- TMDB搜索结果卡片展示区域 -->
-        <div class="card mb-4" id="tmdb-results-card" style="display: none;">
-            <div class="card-header">TMDB搜索结果</div>
-            <div class="card-body">
-                <div class="results" id="tmdb-results">
-                    <div class="tmdb-results-list" id="tmdb-results-list"></div>
+        <div class="col-12">
+            <div class="card mb-4" id="tmdb-results-card" style="display: none;">
+                <div class="card-header">TMDB搜索结果</div>
+                <div class="card-body">
+                    <div class="results" id="tmdb-results">
+                        <div class="tmdb-results-list" id="tmdb-results-list"></div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-</main>
+</div>
 
 <!-- 季选择模态框 -->
 <div id="seasonModal" class="season-modal">
@@ -1006,7 +587,7 @@
                 reader.read().then(({ done, value }) => {
                     if (done) {
                         // 搜索完成，隐藏进度条和进度提示
-                        const progressContainer = document.querySelector(`#collapse-${containerId} .progress-container`);
+                        const progressContainer = document.querySelector(`#collapse-${containerId} .sr-progress`);
                         if (progressContainer) {
                             progressContainer.style.display = 'none';
                         }
@@ -1067,7 +648,7 @@
                                 } else if (data.status === 'complete') {
                                     updateProgressByStage(4, '搜索完成');
                                     // 搜索完成，隐藏进度条和进度提示
-                                    const progressContainer = document.querySelector(`#collapse-${containerId} .progress-container`);
+                                    const progressContainer = document.querySelector(`#collapse-${containerId} .sr-progress`);
                                     if (progressContainer) {
                                         progressContainer.style.display = 'none';
                                     }
@@ -1077,7 +658,7 @@
                                     updateProgress(containerId, 100, data.message); // 保持进度条为100%
                                     showToast(data.message);
                                     // 出现错误，隐藏进度条和进度提示
-                                    const progressContainer = document.querySelector(`#collapse-${containerId} .progress-container`);
+                                    const progressContainer = document.querySelector(`#collapse-${containerId} .sr-progress`);
                                     if (progressContainer) {
                                         progressContainer.style.display = 'none';
                                     }
@@ -1136,26 +717,26 @@
             </div>
             <div id="collapse-${containerId}" class="collapse show results-container">
                 <div class="card-body">
-                    <div class="progress-container">
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="progress-fill-${containerId}" style="width: 100%"></div>
+                    <div class="sr-progress">
+                        <div class="sr-progress-track">
+                            <div class="sr-progress-fill" id="sr-progress-fill-${containerId}" style="width: 100%"></div>
                         </div>
-                        <div class="progress-text" id="progress-text-${containerId}">准备搜索...</div>
+                        <div class="sr-progress-text" id="sr-progress-text-${containerId}">准备搜索...</div>
                     </div>
                     <div class="resource-filters mb-3" id="filters-${containerId}"></div>
                     <div class="resource-results-table">
-                        <table class="table table-sm resource-table">
+                        <table class="sr-table">
                             <thead>
                                 <tr>
-                                    <th scope="col" style="width: 70%; word-break: break-all;" class="sortable" data-sort="title">
+                                    <th scope="col" class="sortable sr-title" data-sort="title">
                                         标题
                                         <span class="sort-indicator"></span>
                                     </th>
-                                    <th scope="col" style="width: 15%; word-break: break-all;" class="sortable" data-sort="info">
+                                    <th scope="col" class="sortable sr-info" data-sort="info">
                                         信息
                                         <span class="sort-indicator"></span>
                                     </th>
-                                    <th scope="col" style="width: 15%; word-break: break-all;" class="sortable" data-sort="site">
+                                    <th scope="col" class="sortable sr-action" data-sort="site">
                                         操作
                                         <span class="sort-indicator"></span>
                                     </th>
@@ -1174,8 +755,8 @@
 
     // 更新进度条
     function updateProgress(containerId, percentage, message) {
-        const progressFill = document.getElementById(`progress-fill-${containerId}`);
-        const progressText = document.getElementById(`progress-text-${containerId}`);
+        const progressFill = document.getElementById(`sr-progress-fill-${containerId}`);
+        const progressText = document.getElementById(`sr-progress-text-${containerId}`);
         
         // 保持进度条为100%
         progressFill.style.width = '100%';
@@ -1320,7 +901,7 @@
         // 生成资源表格行
         resourceItems.forEach(item => {
             const row = document.createElement('tr');
-            row.className = 'resource-item';
+            row.className = 'sr-row';
             row.setAttribute('data-site', item.site);
             row.setAttribute('data-resolution', item.resolution || '');
             row.setAttribute('data-container-id', containerId);
@@ -1344,15 +925,15 @@
             }
             
             row.innerHTML = `
-                <td class="search_titles" style="text-align:left;"><a href="${item.link}" target="_blank">${formatResourceTitle(item.title)}</a></td>
-                <td class="info-col">${sizeBadge}${popularityBadge}</td>
-                <td><button class="btn btn-sm btn-primary download-button" data-link="${item.link}" data-title="${item.title}" data-site="${item.site}" data-referer="${item.subject_url || item.referer || ''}">下载</button></td>
+                <td class="sr-title"><a href="${item.link}" target="_blank">${formatResourceTitle(item.title)}</a></td>
+                <td class="sr-info">${sizeBadge}${popularityBadge}</td>
+                <td class="sr-action"><button class="btn btn-sm btn-primary sr-dl-btn" data-link="${item.link}" data-title="${item.title}" data-site="${item.site}" data-referer="${item.subject_url || item.referer || ''}">下载</button></td>
             `;
             resourceTbody.appendChild(row);
         });
         
         // 下载按钮点击事件监听器
-        resourceTbody.querySelectorAll('.download-button').forEach(button => {
+        resourceTbody.querySelectorAll('.sr-dl-btn').forEach(button => {
             button.addEventListener('click', function() {
                 showLoader();
 
@@ -1604,7 +1185,7 @@
 
     // 初始化排序功能
     function initSorting(containerId, initialSort = false) {
-        const table = document.querySelector(`#${containerId} .resource-table`);
+        const table = document.querySelector(`#${containerId} .sr-table`);
         if (!table) return;
         
         const headers = table.querySelectorAll('.sortable');
@@ -1635,15 +1216,14 @@
                     let aValue, bValue;
                     
                     if (sortKey === 'title') {
-                        aValue = a.querySelector('.search_titles').textContent.trim();
-                        bValue = b.querySelector('.search_titles').textContent.trim();
+                        aValue = a.querySelector('.sr-title a').textContent.trim();
+                        bValue = b.querySelector('.sr-title a').textContent.trim();
                     } else if (sortKey === 'info') {
-                        // 获取信息列中的文本内容进行排序
-                        aValue = a.querySelector('.info-col').textContent.trim();
-                        bValue = b.querySelector('.info-col').textContent.trim();
+                        aValue = a.querySelector('.sr-info').textContent.trim();
+                        bValue = b.querySelector('.sr-info').textContent.trim();
                     } else if (sortKey === 'site') {
-                        aValue = a.querySelector('.download-button').getAttribute('data-site');
-                        bValue = b.querySelector('.download-button').getAttribute('data-site');
+                        aValue = a.querySelector('.sr-dl-btn').getAttribute('data-site');
+                        bValue = b.querySelector('.sr-dl-btn').getAttribute('data-site');
                     }
                     
                     if (direction === 'asc') {
@@ -1671,8 +1251,8 @@
                 const rows = Array.from(tbody.querySelectorAll('tr'));
                 
                 rows.sort((a, b) => {
-                    const aValue = a.querySelector('.search_titles').textContent.trim();
-                    const bValue = b.querySelector('.search_titles').textContent.trim();
+                    const aValue = a.querySelector('.sr-title a').textContent.trim();
+                    const bValue = b.querySelector('.sr-title a').textContent.trim();
                     return bValue.localeCompare(aValue, 'zh-CN');
                 });
                 
@@ -1688,7 +1268,7 @@
         const containerId = checkbox.getAttribute('data-container-id');
         
         // 获取该容器下的所有资源项
-        const resourceItems = document.querySelectorAll(`.resource-item[data-container-id="${containerId}"]`);
+        const resourceItems = document.querySelectorAll(`.sr-row[data-container-id="${containerId}"]`);
         
         // 更新显示/隐藏状态
         resourceItems.forEach(item => {
@@ -1719,7 +1299,7 @@
         const containerId = checkbox.getAttribute('data-container-id');
         
         // 获取该容器下的所有资源项
-        const resourceItems = document.querySelectorAll(`.resource-item[data-container-id="${containerId}"]`);
+        const resourceItems = document.querySelectorAll(`.sr-row[data-container-id="${containerId}"]`);
         
         // 更新显示/隐藏状态
         resourceItems.forEach(item => {

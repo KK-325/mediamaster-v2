@@ -1,348 +1,8 @@
 {% extends "base.html" %}
 {% block title %}系统仪表{% endblock %}
 {% block content %}
-<style>
-/* 全局样式 */
-.container {
-    max-width: 1200px;
-    margin: auto;
-    padding: 20px;
-}
 
-/* 媒体统计模块 */
-.stat-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    padding: 15px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.3s ease;
-    cursor: pointer;
-    color: #007bff;
-    background-color: #f8f9fa;
-}
-.stat-item:hover {
-    transform: translateY(-5px);
-}
-.stat-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.stat-icon img {
-    width: 30px;
-    height: 30px;
-    object-fit: cover;
-}
-.stat-info {
-    display: flex;
-    flex-direction: column;
-    text-align: right;
-}
-.stat-number {
-    font-size: clamp(8px, 1.2vw, 14px);
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-.stat-name {
-    font-size: clamp(8px, 1.2vw, 14px);
-    color: #6c757d;
-}
-
-/* 媒体统计图标背景颜色 */
-.row > .col-md-4:nth-child(1) .stat-icon {
-    background-color: #c75c8a; /* 玫红色 */
-}
-.row > .col-md-4:nth-child(2) .stat-icon {
-    background-color: #2b7e9c; /* 蓝绿色 */
-}
-.row > .col-md-4:nth-child(3) .stat-icon {
-    background-color: #8cb4d4; /* 浅蓝灰色 */
-}
-
-/* 网络图标的背景颜色 */
-.col-md-3:nth-child(4) .stat-icon {
-    background-color: #8cb4d4; /* 浅蓝灰色 - 网络图标 */
-    width: 80px;
-    height: 80px;
-}
-.col-md-3:nth-child(4) .stat-icon img{
-    width: 80px;
-    height: 80px;
-    object-fit: cover;
-}
-
-/* 系统资源模块 */
-.resource-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center; /* 垂直居中 */
-    height: 200px; /* 统一高度 */
-    padding: 20px;
-    background-color: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.3s ease;
-    cursor: pointer;
-}
-.resource-item:hover {
-    transform: translateY(-5px);
-}
-.gauge-container {
-    width: 80px; /* 仪表宽度 */
-    height: 80px; /* 仪表高度 */
-    position: relative;
-    display: inline-block;
-    margin-bottom: 10px; /* 与下方文字保持间距 */
-}
-.gauge-container svg {
-    width: 100%;
-    height: 100%;
-    transform-origin: 50% 50%;
-}
-.gauge-container circle {
-    fill: none;
-    stroke-width: 6;
-    transform: rotate(-90deg);
-    transform-origin: 50% 50%;
-    stroke-linecap: round;
-}
-.gauge-container .background {
-    stroke: #e0e0e0;
-    stroke-dasharray: 251.32741228718345;
-    stroke-dashoffset: 0;
-}
-.gauge-container .foreground {
-    stroke: #007bff;
-    stroke-dasharray: 251.32741228718345;
-    stroke-dashoffset: 251.32741228718345;
-    transition: stroke-dashoffset 0.5s ease-in-out;
-}
-.gauge-container .gauge-text {
-    font-size: clamp(8px, 1vw, 12px); /* 仪表字体大小 */
-    font-weight: bold;
-    fill: #6c757db0;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-}
-
-/* 网络信息样式 */
-.network-info {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    margin-top: 10px; /* 调整文字与圆圈的间距 */
-}
-
-.network-label {
-    font-size: clamp(8px, 1.2vw, 14px);
-    color: #6c757d;
-}
-
-.network-value {
-    font-size: clamp(8px, 1.2vw, 14px);
-    color: #007bff;
-    font-weight: bold;
-    margin-left: 5px; /* 调整值与标签之间的间距 */
-}
-
-/* 上传下载速率 */
-.upload-speed {
-    font-size: clamp(8px, 1.2vw, 14px);
-    color: #007bff; /* 蓝色 */
-}
-
-.download-speed {
-    font-size: clamp(8px, 1.2vw, 14px);
-    color: #28a745; /* 绿色 */
-}
-
-.network-speed-chart {
-    width: 200px;
-    height: 80px;
-    display: none;
-}
-
-/* 动画效果 */
-.fade-in {
-    animation: fadeIn 0.5s ease-in-out;
-}
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* 站点状态指示器样式 */
-.status-indicator {
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 20px;
-    font-weight: 500;
-    text-align: center;
-}
-
-.status-running {
-    color: #2e7d32;
-}
-
-.status-stopped {
-    color: #c62828;
-}
-
-.status-unknown {
-    color: #ff7507;
-}
-
-.status-indicator::before {
-    content: "";
-    display: inline-block;
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    margin-right: 8px;
-}
-
-.status-running::before {
-    background-color: #4caf50;
-}
-
-.status-stopped::before {
-    background-color: #f44336;
-}
-
-.status-unknown::before {
-    background-color: #ff7507;
-}
-
-/* 站点URL样式 */
-#site-status-content table a {
-    color: #000000 !important;
-    text-decoration: none !important;
-}
-
-#site-status-content table a:hover {
-    color: #007bff !important;
-    text-decoration: none !important;
-}
-/* 加载状态样式 */
-#site-status-content .d-flex {
-    min-height: 100px;
-}
-
-#site-status-content .spinner-border {
-    width: 1.5rem;
-    height: 1.5rem;
-    border-width: 0.15em;
-    animation: spinner-border 0.75s linear infinite;
-}
-
-#site-status-content .ms-2 {
-    animation: none;
-}
-
-/* 刷新站点状态图标旋转动画 */
-@keyframes rotateIcon {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-#refresh-site-status.rotating {
-    animation: rotateIcon 1s linear infinite;
-    cursor: wait !important;
-    opacity: 0.8 !important;
-    display: inline-block; /* 确保transform生效 */
-}
-
-/* 确保旋转时保持原有样式 */
-#refresh-site-status.rotating {
-    color: #ffffff !important;
-}
-
-.visually-hidden,
-.ms-2,
-.text-muted {
-    font-size: clamp(8px, 1.2vw, 14px) !important;
-}
-
-/* 响应式布局（仅保留 1400px 断点） */
-@media (max-width: 1400px) {
-    .container {
-        padding: 15px;
-    }
-
-    .stat-item, .resource-item {
-        text-align: center;
-    }
-
-    .stat-number {
-        font-size: clamp(12px, 1.2vw, 14px);
-    }
-    .stat-name {
-        font-size: clamp(12px, 1.2vw, 14px);
-    }
-    .network-value {
-        font-size: clamp(12px, 1.2vw, 14px);
-    }
-    .network-label {
-        font-size: clamp(12px, 1.2vw, 14px);
-    }
-    .card-column {
-        flex-direction: column;
-    }
-    .col-sm-12 {
-        width: 100%;
-    }
-    .resource-item {
-        flex-direction: row;
-        align-items: center;
-        text-align: center;
-        justify-content: space-between;
-        height: 120px;
-        margin-bottom: 15px;
-        background-color: #f8f9fa;
-    }
-
-    .gauge-container {
-        margin-bottom: 0px; /* 调整仪表与文字之间的间距 */
-    }
-
-    .network-info {
-        align-items: flex-end;
-    }
-    .upload-speed {
-        font-size: clamp(12px, 1.2vw, 14px);
-    }
-    .download-speed {
-        font-size: clamp(12px, 1.2vw, 14px);
-    }
-    .network-speed-chart {
-    width: 150px;
-    height: 60px;
-    display: none;
-    }
-}
-</style>
-
-<main class="container mt-1">
+<div class="content-wrapper">
     <div class="row fade-in">
         <!-- 媒体统计模块 -->
         <div class="col-md-12">
@@ -395,7 +55,7 @@
                 <div class="card-body">
                     <div class="row card-column">
                         <!-- CPU模块 -->
-                        <div class="col-md-3 col-sm-12">
+                        <div class="col-xl-3 col-md-6 col-12">
                             <div class="resource-item">
                                 <div class="gauge-container" id="cpu-usage-gauge">
                                     <svg width="100%" height="100%">
@@ -411,7 +71,7 @@
                             </div>
                         </div>
                         <!-- 内存模块 -->
-                        <div class="col-md-3 col-sm-12">
+                        <div class="col-xl-3 col-md-6 col-12">
                             <div class="resource-item">
                                 <div class="gauge-container" id="memory-usage-gauge">
                                     <svg width="100%" height="100%">
@@ -427,7 +87,7 @@
                             </div>
                         </div>
                         <!-- 存储模块 -->
-                        <div class="col-md-3 col-sm-12">
+                        <div class="col-xl-3 col-md-6 col-12">
                             <div class="resource-item">
                                 <div class="gauge-container" id="disk-usage-progress">
                                     <svg width="100%" height="100%">
@@ -443,7 +103,7 @@
                             </div>
                         </div>
                         <!-- 网络模块 -->
-                        <div class="col-md-3 col-sm-12">
+                        <div class="col-xl-3 col-md-6 col-12">
                             <div class="resource-item">
                                 <div class="network-speed-chart" id="network-speed-chart">
                                     <svg id="speedChart" width="100%" height="100%">
@@ -463,7 +123,7 @@
                                         <path id="downloadPath" fill="url(#downloadGradient)" stroke="#36CE9E" stroke-width="2" d="" />
                                     </svg>
                                 </div>
-                                <div class="stat-icon" id="noActivityIcon">
+                                <div class="stat-icon network-stat-icon" id="noActivityIcon">
                                     <img src="{{ url_for('static', filename='img/net.png') }}" alt="网络图标">
                                 </div>
                                 <div class="network-info">
@@ -524,7 +184,7 @@
             </section>
         </div>
     </div>
-</main>
+</div>
 <script>
 $(document).ready(function() {
     // 为每个 stat-item 添加点击事件监听器

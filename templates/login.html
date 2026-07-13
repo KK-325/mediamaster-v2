@@ -4,321 +4,184 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NAS影视媒体库管理系统 - 登录</title>
-    <script src="https://cdn.tailwindcss.com/3.4.17"></script>
     <script src="/static/js/jquery.min.js"></script>
-    <!-- 添加 Bootstrap Icons -->
     <link rel="stylesheet" href="/static/bootstrap-icons/bootstrap-icons.css">
-    <style>
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        
-        /* APP设备特殊样式 */
-        .app-container {
-            width: 375px; 
-            height: 812px;
-            flex-direction: column;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        }
-        
-        /* Web端背景 */
-        @media (min-width: 376px) {
-            body {
-                background-image: url('https://uapis.cn/api/v1/image/bing-daily');
-                background-attachment: fixed;
-                background-size: cover;
-                background-position: center;
-                position: relative;
-            }
-            body::before {
-                content: "";
-                position: fixed;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                background: rgba(0, 0, 0, 0.6); /* 半透明黑色遮罩 */
-                z-index: -1;
-            }
-        }
-        
-        /* 卡片样式 */
-        .login-card {
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-            transition: all 0.3s ease;
-        }
-        
-        /* 输入框样式 */
-        .input-field:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
-        }
-        
-        /* 按钮动画 */
-        .login-btn {
-            transition: all 0.3s ease;
-            transform: translateY(0);
-        }
-        .login-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 7px 15px rgba(59, 130, 246, 0.3);
-        }
-        .login-btn:active {
-            transform: translateY(0);
-        }
-        
-        /* 错误消息样式 */
-        .error-message {
-            color: #ff4d4d;
-            text-align: center;
-            display: none;
-            margin-bottom: 15px;
-        }
-        
-        /* 密码切换按钮样式 */
-        .password-toggle {
-            cursor: pointer;
-            user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        /* 眼睛图标样式 */
-        .eye-icon {
-            font-size: 1.25rem;
-            color: #9ca3af; /* gray-400 */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        /* Logo样式 */
-        .logo-img {
-            width: 48px;
-            height: 48px;
-            object-fit: contain;
-        }
-        
-        .logo-img-mobile {
-            width: 38px;
-            height: 38px;
-            object-fit: contain;
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/variables.css">
+    <link rel="stylesheet" href="/static/css/login.css">
 </head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+<body class="login-page">
     <!-- PC/Pad模式 -->
-    <div class="w-full max-w-md hidden md:block">
-        <div class="login-card bg-white rounded-xl p-8">
-            <!-- Logo -->
-            <div class="flex justify-center mb-8">
+    <div class="login-pc-wrapper">
+        <div class="login-card">
+            <div class="login-logo-row">
                 <img src="/static/img/logo.png" alt="MediaMaster" class="logo-img">
             </div>
-            
-            <h1 class="text-2xl font-bold text-center text-gray-800 mb-6">NAS媒体库管理系统</h1>
-            
-            <!-- 错误消息显示 -->
+
+            <h1 class="login-title">NAS媒体库管理系统</h1>
+
             <div class="error-message" id="error-message"></div>
-            
-            <!-- 表单 -->
-            <form id="login_form" class="space-y-6" method="post">
+
+            <form id="login_form" class="login-form" method="post">
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">用户名</label>
-                    <input type="text" name="username" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none transition-colors" placeholder="请输入用户名" required autocomplete="username">
+                    <label class="login-label">用户名</label>
+                    <input type="text" name="username" class="input-field" placeholder="请输入用户名" required autocomplete="username">
                 </div>
-                
+
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">密码</label>
-                    <div class="relative">
-                        <input type="password" name="password" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none transition-colors pr-10" placeholder="请输入密码" required autocomplete="current-password" id="password-input">
-                        <span class="password-toggle absolute right-3 top-1/2 transform -translate-y-1/2" data-input-id="password-input">
-                            <!-- 使用 Bootstrap Icons 替换原来的 SVG -->
+                    <label class="login-label">密码</label>
+                    <div class="login-password-wrapper">
+                        <input type="password" name="password" class="input-field" placeholder="请输入密码" required autocomplete="current-password" id="password-input">
+                        <span class="password-toggle" data-input-id="password-input">
                             <i class="bi bi-eye eye-icon" style="display: block;"></i>
                             <i class="bi bi-eye-slash eye-icon" style="display: none;"></i>
                         </span>
                     </div>
                 </div>
-                
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center">
-                        <input id="remember" type="checkbox" name="remember" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                        <label for="remember" class="ml-2 block text-sm text-gray-700">自动登录</label>
+
+                <div class="login-checkbox-row">
+                    <div class="login-checkbox-group">
+                        <input id="remember" type="checkbox" name="remember" class="login-checkbox">
+                        <label for="remember" class="login-checkbox-label">自动登录</label>
                     </div>
-                    
-                    <a style="display: none;" href="#" class="text-sm text-blue-600 hover:underline">忘记密码?</a>
+
+                    <a style="display: none;" href="#" class="login-forgot-pw">忘记密码?</a>
                 </div>
-                
-                <button type="submit" class="login-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg">登 录</button>
+
+                <button type="submit" class="login-btn">登 录</button>
             </form>
-            
         </div>
-        
-        <!-- 版权信息 -->
-        <div class="mt-8 text-center text-gray-300">
-            <p class="text-sm">©2024 - 2026 Smysong. All Rights Reserved.</p>
-            <p class="mt-2 text-xs text-gray-400">NAS媒体库管理系统 | Version：{{ version }}</p>
+
+        <div class="login-footer-pc">
+            <p class="login-footer-text">&copy;2024 - <span id="footer-year-pc"></span> Smysong. All Rights Reserved.</p>
+            <p class="login-footer-version">NAS媒体库管理系统 | Version&#xFF1A;{{ version }}</p>
+            <p class="login-footer-docs"><a href="/docs" target="_blank">产品文档</a></p>
         </div>
     </div>
-    
+
     <!-- 移动APP模式 -->
-    <div class="app-container bg-white overflow-hidden hidden md:hidden">
-        <!-- 顶部区域 -->
-        <header class="h-14 flex items-center justify-center border-gray-100">
+    <div class="login-mobile-wrapper" id="mobile-wrapper">
+        <header class="login-mobile-header">
             <img src="/static/img/logo.png" alt="MediaMaster Logo" class="logo-img-mobile">
         </header>
-        
-        <!-- 内容区域 -->
-        <main class="flex-grow overflow-y-auto hide-scrollbar p-8">
-            <h1 class="text-xl font-bold text-center text-gray-800 mb-6">NAS媒体库管理系统</h1>
-            
-            <!-- 错误消息显示 -->
+
+        <main class="login-mobile-main">
+            <h1 class="login-title-mobile">NAS媒体库管理系统</h1>
+
             <div class="error-message" id="error-message-mobile"></div>
-            
-            <form id="login_form_mobile" class="space-y-6" method="post">
+
+            <form id="login_form_mobile" class="login-form" method="post">
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">用户名</label>
-                    <input type="text" name="username" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none transition-colors" placeholder="请输入用户名" required autocomplete="username">
+                    <label class="login-label">用户名</label>
+                    <input type="text" name="username" class="input-field" placeholder="请输入用户名" required autocomplete="username">
                 </div>
-                
+
                 <div>
-                    <label class="block text-gray-700 text-sm font-medium mb-2">密码</label>
-                    <div class="relative">
-                        <input type="password" name="password" class="input-field w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none transition-colors pr-10" placeholder="请输入密码" required autocomplete="current-password" id="password-input-mobile">
-                        <span class="password-toggle absolute right-3 top-1/2 transform -translate-y-1/2" data-input-id="password-input-mobile">
+                    <label class="login-label">密码</label>
+                    <div class="login-password-wrapper">
+                        <input type="password" name="password" class="input-field" placeholder="请输入密码" required autocomplete="current-password" id="password-input-mobile">
+                        <span class="password-toggle" data-input-id="password-input-mobile">
                             <i class="bi bi-eye eye-icon" style="display: block;"></i>
                             <i class="bi bi-eye-slash eye-icon" style="display: none;"></i>
                         </span>
                     </div>
                 </div>
-                
-                <div class="flex items-center">
-                    <input id="remember-mobile" type="checkbox" name="remember" class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-                    <label for="remember-mobile" class="ml-2 block text-sm text-gray-700">自动登录</label>
+
+                <div class="login-checkbox-group">
+                    <input id="remember-mobile" type="checkbox" name="remember" class="login-checkbox">
+                    <label for="remember-mobile" class="login-checkbox-label">自动登录</label>
                 </div>
-                
-                <button type="submit" class="login-btn w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg">登 录</button>
-                
-                <div style="display: none;" class="flex justify-between pt-4">
-                    <a href="#" class="text-sm text-blue-600 hover:underline">忘记密码</a>
+
+                <button type="submit" class="login-btn">登 录</button>
+
+                <div style="display: none;" class="login-forgot-row">
+                    <a href="#" class="login-forgot-pw">忘记密码</a>
                 </div>
             </form>
         </main>
-        
-        <!-- 底部区域 -->
-        <footer class="h-[80px] flex flex-col items-center justify-center border-t border-gray-100 p-3 bg-gray-50">
-            <p class="text-xs text-gray-500 text-center">©2024 - 2026 Smysong. All Rights Reserved.</p>
-            <p class="mt-1 text-[10px] text-gray-400">NAS媒体库管理系统 | Version：{{ version }}</p>
+
+        <footer class="login-mobile-footer">
+            <p class="login-footer-text-mobile">&copy;2024 - <span id="footer-year-mobile"></span> Smysong. All Rights Reserved.</p>
+            <p class="login-footer-version-mobile">NAS媒体库管理系统 | Version&#xFF1A;{{ version }}</p>
+            <p class="login-footer-docs-mobile"><a href="/docs" target="_blank">产品文档</a></p>
         </footer>
     </div>
 
     <script>
-        // 设备检测及布局切换
         document.addEventListener('DOMContentLoaded', function() {
-            const isMobile = window.innerWidth <= 768;
-            const pcContainer = document.querySelector('.max-w-md');
-            const appContainer = document.querySelector('.app-container');
-            
-            if (pcContainer && appContainer) {
-                if (isMobile && window.innerWidth <= 375) {
-                    pcContainer.classList.add('hidden');
-                    appContainer.classList.remove('hidden');
-                    appContainer.classList.add('flex');
+            // 动态设置版权年份
+            var currentYear = new Date().getFullYear();
+            var yearPc = document.getElementById('footer-year-pc');
+            var yearMobile = document.getElementById('footer-year-mobile');
+            if (yearPc) yearPc.textContent = currentYear;
+            if (yearMobile) yearMobile.textContent = currentYear;
+
+            var isMobile = window.innerWidth <= 768 && window.innerWidth <= 375;
+            var pcWrapper = document.querySelector('.login-pc-wrapper');
+            var mobileWrapper = document.getElementById('mobile-wrapper');
+
+            if (pcWrapper && mobileWrapper) {
+                if (isMobile) {
+                    pcWrapper.style.display = 'none';
+                    mobileWrapper.classList.add('active');
                 } else {
-                    appContainer.classList.add('hidden');
-                    pcContainer.classList.remove('hidden');
+                    mobileWrapper.style.display = 'none';
+                    pcWrapper.style.display = 'block';
                 }
             }
-            
-            // 表单验证和提交
+
+            function handleLogin(form, errorEl) {
+                $.ajax({
+                    type: 'POST',
+                    url: '/login',
+                    data: $(form).serialize(),
+                    success: function(response) {
+                        if (response.success) {
+                            errorEl.style.display = 'none';
+
+                            var toast = document.createElement('div');
+                            toast.className = 'login-toast';
+                            toast.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24"><path fill="#ffffff" d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z"/></svg> 登录成功！正在跳转...';
+                            document.body.appendChild(toast);
+
+                            setTimeout(function() {
+                                toast.classList.add('hiding');
+                                setTimeout(function() {
+                                    toast.remove();
+                                    window.location.href = response.redirect_url;
+                                }, 300);
+                            }, 2500);
+                        } else {
+                            errorEl.textContent = response.message;
+                            errorEl.style.display = 'block';
+                        }
+                    },
+                    error: function() {
+                        errorEl.textContent = '网络错误，请稍后再试。';
+                        errorEl.style.display = 'block';
+                    }
+                });
+            }
+
             $('#login_form').on('submit', function(e) {
                 e.preventDefault();
-                const form = this;
-                const errorMessage = $('#error-message');
-                
-                $.ajax({
-                    type: 'POST',
-                    url: '/login',
-                    data: $(form).serialize(),
-                    success: function(response) {
-                        if (response.success) {
-                            // 登录成功，重定向到指定页面
-                            errorMessage.hide();
-                            // 显示成功消息
-                            const successEl = document.createElement('div');
-                            successEl.classList.add('fixed', 'top-4', 'right-4', 'bg-green-100', 'border-l-4', 'border-green-500', 'text-green-700', 'p-4', 'rounded-lg', 'shadow-lg', 'z-50', 'animate-fadeIn');
-                            successEl.innerHTML = `<p class="flex items-center"><svg class="mr-2" style="width:20px;height:20px" viewBox="0 0 24 24"><path fill="#10B981" d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z" /></svg> 登录成功！正在跳转...</p>`;
-                            document.body.appendChild(successEl);
-                            
-                            setTimeout(() => {
-                                successEl.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                                setTimeout(() => {
-                                    successEl.remove();
-                                    window.location.href = response.redirect_url;
-                                }, 300);
-                            }, 2500);
-                        } else {
-                            // 登录失败，显示错误消息
-                            errorMessage.text(response.message).show();
-                        }
-                    },
-                    error: function() {
-                        // 处理网络错误
-                        errorMessage.text('网络错误，请稍后再试。').show();
-                    }
-                });
-            });
-            
-            // 移动端表单提交
-            $('#login_form_mobile').on('submit', function(e) {
-                e.preventDefault();
-                const form = this;
-                const errorMessage = $('#error-message-mobile');
-                
-                $.ajax({
-                    type: 'POST',
-                    url: '/login',
-                    data: $(form).serialize(),
-                    success: function(response) {
-                        if (response.success) {
-                            // 登录成功，重定向到指定页面
-                            errorMessage.hide();
-                            // 显示成功消息
-                            const successEl = document.createElement('div');
-                            successEl.classList.add('fixed', 'top-4', 'right-4', 'bg-green-100', 'border-l-4', 'border-green-500', 'text-green-700', 'p-4', 'rounded-lg', 'shadow-lg', 'z-50', 'animate-fadeIn');
-                            successEl.innerHTML = `<p class="flex items-center"><svg class="mr-2" style="width:20px;height:20px" viewBox="0 0 24 24"><path fill="#10B981" d="M12 2C6.5 2 2 6.5 2 12S6.5 22 12 22 22 17.5 22 12 17.5 2 12 2M10 17L5 12L6.41 10.59L10 14.17L17.59 6.58L19 8L10 17Z" /></svg> 登录成功！正在跳转...</p>`;
-                            document.body.appendChild(successEl);
-                            
-                            setTimeout(() => {
-                                successEl.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                                setTimeout(() => {
-                                    successEl.remove();
-                                    window.location.href = response.redirect_url;
-                                }, 300);
-                            }, 2500);
-                        } else {
-                            // 登录失败，显示错误消息
-                            errorMessage.text(response.message).show();
-                        }
-                    },
-                    error: function() {
-                        // 处理网络错误
-                        errorMessage.text('网络错误，请稍后再试。').show();
-                    }
-                });
+                handleLogin(this, document.getElementById('error-message'));
             });
 
-            // 密码可见性切换 - 使用 Bootstrap Icons
+            $('#login_form_mobile').on('submit', function(e) {
+                e.preventDefault();
+                handleLogin(this, document.getElementById('error-message-mobile'));
+            });
+
             document.querySelectorAll('.password-toggle').forEach(function(toggle) {
                 toggle.addEventListener('click', function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    
-                    const inputId = this.getAttribute('data-input-id');
-                    const input = document.getElementById(inputId);
-                    const eyeIcon = this.querySelector('.bi-eye');
-                    const eyeSlashIcon = this.querySelector('.bi-eye-slash');
-                    
+
+                    var inputId = this.getAttribute('data-input-id');
+                    var input = document.getElementById(inputId);
+                    var eyeIcon = this.querySelector('.bi-eye');
+                    var eyeSlashIcon = this.querySelector('.bi-eye-slash');
+
                     if (input && eyeIcon && eyeSlashIcon) {
                         if (input.type === 'password') {
                             input.type = 'text';
@@ -333,6 +196,32 @@
                 });
             });
         });
+    </script>
+
+    <!-- ========== 日间/夜间模式初始化 ========== -->
+    <script>
+        (function() {
+            var THEME_KEY = 'mediamaster-theme';
+            var savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+            if (savedTheme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            }
+        })();
+    </script>
+
+    <!-- ========== 必应每日壁纸背景 ========== -->
+    <script>
+        (function() {
+            var url = 'https://bing.img.run/uhd.php';
+            var img = new Image();
+            img.onload = function() {
+                document.body.style.setProperty('--bing-wallpaper', 'url(' + url + ')');
+            };
+            img.onerror = function() {
+                // 壁纸加载失败，CSS 中 var() 回退值会自动使用本地默认图
+            };
+            img.src = url;
+        })();
     </script>
 
 </body>

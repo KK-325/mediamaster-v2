@@ -2,6 +2,22 @@
 
 所有显著的变更都会记录在此文档中。此项目遵循 [语义化版本控制](https://semver.org/spec/v2.0.0.html)。
 
+## [v2.6.0] - 2026-07-13
+
+###全新 UI 设计
+- 全面支持日间/夜间模式，覆盖登录页、模态框、表格、按钮等所有界面元素
+- 大屏适配优化，页面内容区全宽填充，消除右侧空白区域
+- 移动端交互升级，顶栏新增主题切换和用户菜单，与桌面端体验一致
+- 统一各页面布局风格，卡片、按钮、图标尺寸保持一致
+- 修复夜间模式下多处配色异常，确保全局视觉一致性
+
+### 新增
+- 登录页默认背景图，Bing 壁纸加载失败时自动回退
+
+### 修复
+- 下载管理页选中状态下进度条动画丢失
+- 移动端菜单图标夜间模式不可见
+
 ## [2.5.23] - 2026-06-11
 
 #### 站点索引
@@ -931,3 +947,4 @@
 [2.5.21]: https://github.com/smysong/mediamaster-v2/releases/tag/v2.5.21
 [2.5.22]: https://github.com/smysong/mediamaster-v2/releases/tag/v2.5.22
 [2.5.23]: https://github.com/smysong/mediamaster-v2/releases/tag/v2.5.23
+[2.6.0]: https://github.com/smysong/mediamaster-v2/releases/tag/v2.6.0

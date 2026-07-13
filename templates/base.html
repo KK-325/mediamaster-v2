@@ -9,699 +9,10 @@
     <link href="/static/css/bootstrap.css" rel="stylesheet">
     <link href="/static/bootstrap-icons/bootstrap-icons.css" rel="stylesheet">
     <script src="/static/js/jquery.min.js"></script>
-    <style>
-        body {
-            padding-top: 60px;
-            background: #f9f9f9;
-        }
-        .h3 {
-            font-size: clamp(14px, 1.2vw, 18px);
-            vertical-align: middle; /* 文字垂直居中 */
-        }
-        .h4 {
-            background: aliceblue;
-            font-size: clamp(12px, 1.2vw, 16px);
-            vertical-align: middle; /* 文字垂直居中 */
-        }
-        .offcanvas-backdrop {
-            z-index: 110;
-        }
-        nav.navbar {
-            z-index: 100;
-        }
-        .logo {
-            height: 40px;
-            font-size: 17px;
-            padding-left: 10px;
-        }
-        .navbar-brand {
-            color: #adb5bd;
-        }
-        .navbar-brand:hover {
-            color: #adb5bd;
-        }
-        .sidebar {
-            position: fixed;
-            top: 0;
-            bottom: 0;
-            left: 0;
-            padding: 0 0 0;
-            background-color: #f8f9fa;
-            transition: transform 0.3s ease-in-out;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
-            z-index: 120;
-        }
-        .sidebar-sticky {
-            position: relative;
-            top: 0;
-            height: calc(100vh - 48px);
-            padding-top: 1rem;
-            overflow-x: hidden;
-            overflow-y: auto;
-        }
-        .sidebar .nav-link {
-            font-weight: 500;
-            color: #333;
-            transition: color 0.3s ease, transform 0.3s ease; /* 添加颜色和变换过渡 */
-        }
-        .sidebar .nav-link:hover {
-            background-color: #e9ecef;
-            color: #007bff;
-        }
-        .sidebar .active {
-            background-color: #e9ecef;
-            transition: background-color 0.3s ease;
-            color: #007bff; /* 改变颜色 */
-        }
-        .sidebar .user{
-            position: absolute;
-            bottom: 0;
-            width: 100%;
-            text-align: center;
-            padding: 1rem; /* 可以根据需要调整内边距 */
-            padding-bottom: 60px;
-        }
-        i.bi {
-            margin-right: 5px;
-        }
-        li.nav-item {
-            margin-bottom: 5px;
-        }
-        /* 头像样式 */
-        .avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 5px;
-        }
-        /* 昵称样式 */
-        .nickname {
-            font-size: clamp(14px, 1.2vw, 15px);
-            margin: 0;
-            color: #333;
-        }
-        /* 退出登录样式 */
-        .logout {
-            font-size: clamp(14px, 1.2vw, 15px);
-            text-decoration: none;
-        }
-        .logout:hover {
-            background-color: rgba(var(--bs-light-rgb), var(--bs-bg-opacity)) !important;
-            color: #007bff !important;
-        }
-        /* 版本信息样式 */
-        .version a {
-            color: #333;
-            text-decoration: none;
-        }
-        .version a:hover {
-            color: #198754;
-        }
-        /* 闪烁动画 */
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.3; } /* 半透明而不是完全消失 */
-        }
-        .blinking {
-            animation: blink 1.5s infinite;
-            color: #ff7800;
-            transition: opacity 0.3s;
-        }
-
-        .new-version {
-            /* 设置图片上下居中 */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 46px; /* 设置元素宽度 */
-            height: 100%; /* 设置元素高度 */
-            border: none;
-        }
-
-        #version-info p {
-            margin: 10px 0;
-        }
-        #release-notes {
-            font-size: clamp(10px, 1.2vw, 14px);
-            line-height: 1.6;
-            color: #333;
-        }
-        #release-notes h1,
-        #release-notes h2,
-        #release-notes h3,
-        #release-notes h4,
-        #release-notes h5 {
-            font-size: clamp(10px, 1.2vw, 16px);
-            line-height: 1.6;
-            color: #333;
-            text-align: left;
-        }
-        #release-notes ul,
-        #release-notes ol {
-            font-size: clamp(10px, 1.2vw, 14px);
-            line-height: 1.6;
-            color: #333;
-        }
-        #release-notes a {
-            color: #333;
-            text-decoration: underline;
-        }
-        #release-notes a:hover {
-            text-decoration: none;
-        }
-        #update-actions button {
-            margin-right: 10px;
-        }
-        .sidebar .version {
-        position: absolute;
-        bottom: 0;
-        width: 100%;
-        text-align: center;
-        font-size: clamp(14px, 1.2vw, 15px);
-        padding: 1rem; /* 可以根据需要调整内边距 */
-        }
-        .content {
-            margin-left: 250px; /* 与侧边栏宽度一致 */
-            transition: margin-left 0.3s ease-in-out;
-        }
-        .content.collapsed {
-            margin-left: 0;
-        }
-        .search-form {
-            display: flex;
-            align-items: center;
-            margin-right: 10px;
-        }
-        .search-form input[type="search"] {
-            display: block;
-        }
-        .search-icon {
-            display: none;
-            cursor: pointer;
-            margin-left: 10px;
-        }
-        .search-button {
-            white-space: nowrap; /* 防止文字换行 */
-            font-size: clamp(10px, 1.2vw, 16px);
-        }
-        .table thead th {
-            text-align: center;
-            font-size: clamp(10px, 1.5vw, 16px);
-            vertical-align: middle;
-            white-space: nowrap; /* 防止换行 */
-            overflow: hidden; /* 隐藏超出部分 */
-            text-overflow: ellipsis; /* 显示省略号 */
-        }
-        .table tbody td {
-            text-align: center;
-            font-size: clamp(8px, 1.2vw, 14px);
-            vertical-align: middle;
-            word-break: break-all; /* 在任意字符处断开 */
-        }
-        .search_titles a {
-            color: black;
-            text-decoration: none;
-        }
-        .search_titles a:hover {
-            color:#0d6efd;
-            text-decoration: none;
-        }
-        .btn {
-            white-space: nowrap;
-            text-align: center; /* 按钮文字居中 */
-            font-size: clamp(10px, 1.2vw, 16px);
-            vertical-align: middle; /* 文字垂直居中 */
-        }
-        /* 占位元素样式 */
-        .spacer {
-            height: 15px; /* 调整高度以设置间隔距离 */
-        }
-
-        /* 分页按钮样式 */
-        #pagination {
-            position: relative;
-            text-align: right;
-            margin-right: 10px;
-            margin-bottom: 10px;
-        }
-
-        #pagination a {
-            margin: 0 5px;
-        }
-        .modal-header {
-            display: flex;
-            align-items: flex-start;
-            font-size: clamp(14px, 1.2vw, 18px);
-            vertical-align: middle; /* 文字垂直居中 */
-            width: 100%;
-        }
-        .modal-header h5 {
-            font-size: clamp(14px, 1.2vw, 18px);
-            vertical-align: middle; /* 文字垂直居中 */
-        }
-        .modal-body {
-            font-size: clamp(10px, 1.2vw, 16px);
-            width: 100%;
-        }
-        .offcanvas-header {
-            display: none;
-        }
-
-        /* 统一表单元素字体大小 */
-        input.form-control, 
-        select.form-select, 
-        textarea.form-control,
-        .btn {
-            font-size: clamp(10px, 1.0vw, 14px) !important;
-        }
-
-        /* 用户资料模态框中的表单元素 */
-        #userProfileModal input.form-control,
-        #userProfileModal select.form-select,
-        #userProfileModal textarea.form-control,
-        #userProfileModal .btn {
-            font-size: clamp(10px, 1.0vw, 14px) !important;
-        }
-
-        /* 版本更新模态框中的元素 */
-        #versionUpdateModal input.form-control,
-        #versionUpdateModal select.form-select,
-        #versionUpdateModal textarea.form-control,
-        #versionUpdateModal .btn {
-            font-size: clamp(10px, 1.0vw, 14px) !important;
-        }
-
-        @media (max-width: 768px) {
-            nav#sidebarMenu {
-                width: 300px;
-            }
-            div#searchOffcanvas {
-                width: 300px;
-            }
-            .sidebar {
-                display: block;
-                padding-top: 0; 
-            }
-            .navbar .navbar-toggler {
-                display: block;
-            }
-            .content {
-                margin-left: 0;
-            }
-            .search-form input[type="search"],
-            .search-form button[type="submit"] {
-                display: none;
-            }
-            .search-icon {
-                display: block;
-            }
-            .douban {
-                display: none;
-            }
-            .offcanvas-header {
-            display: flex;
-            }
-            /* 隐藏 logo 和 文字 */
-            .logo {
-                display: none;
-            }
-        }
-        .episode-text {
-            word-break: break-all; /* 强制在任何字符处换行 */
-            white-space: pre-wrap;
-        }
-        .miss-episode-text {
-        max-width: 140px; /* 设置最大宽度 */
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        }
-        .results {
-            margin-top: 20px;
-        }
-        .result-item {
-            border: 1px solid #ccc;
-            padding: 10px;
-            margin-bottom: 10px;
-        }
-        /* 加载遮罩层样式 */
-        .loader-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            display: flex;
-            flex-direction: column; /* 垂直排列子元素 */
-            justify-content: center; /* 垂直居中 */
-            align-items: center; /* 水平居中 */
-            z-index: 1100;
-            display: none; /* 默认隐藏 */
-        }
-        /* 提示文字样式 */
-        .loading-text {
-            margin-top: 15px; /* 与加载指示器的间距 */
-            color: white; /* 文字颜色 */
-            font-size: clamp(14px, 1.2vw, 18px); /* 自适应字体大小 */
-            text-align: center; /* 文字居中 */
-        }
-        .loader {
-            border: 6px solid #f3f3f3; /* Light grey */
-            border-top: 6px solid #3498db; /* Blue */
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
-            animation: spin 2s linear infinite;
-        }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        /* 海报墙 */
-        .poster-wall {
-            display: grid;
-            gap: 1rem;
-            justify-items: center;
-            align-items: center;
-        }
-        .poster-item {
-            position: relative;
-            text-align: center;
-            overflow: hidden;
-            border-radius: 10px; /* 圆角边框 */
-            box-shadow: 0 4px 8px rgba(173, 216, 230, 0.5); /* 柔和的淡蓝色阴影 */
-            width: 150px; /* 固定宽度 */
-            height: 225px; /* 固定高度 */
-        }
-        .poster-item img {
-            width: 100%; /* 图片宽度占满容器 */
-            height: 100%; /* 图片高度占满容器 */
-            object-fit: cover; /* 保持图片比例并裁剪 */
-            border-radius: 10px; /* 继承父元素的圆角 */
-        }
-        .poster-item .info {
-            display: none;
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 0.5rem;
-            border-bottom-left-radius: 10px; /* 圆角边框 */
-            border-bottom-right-radius: 10px; /* 圆角边框 */
-        }
-        .poster-item:hover .info {
-            display: block;
-        }
-        .poster-item .info h5 {
-            font-size: 0.8rem; /* 默认字体大小 */
-            margin-bottom: 2px;
-        }
-        @media (min-width: 768px) {
-            .poster-wall {
-                grid-template-columns: repeat(6, 1fr); /* 默认6列 */
-            }
-        }
-        @media (max-width: 768px) {
-            .poster-wall {
-                grid-template-columns: repeat(4, 1fr); /* 默认4列 */
-            }
-            .poster-item {
-                width: 80px; /* 小屏幕海报宽度 */
-                height: 120px; /* 小屏幕海报高度 */
-            }
-            .poster-item img {
-                width: 100%; /* 小屏幕海报尺寸 */
-                height: 100%; /* 小屏幕海报尺寸 */
-            }
-            .poster-item .info h5 {
-                font-size: 0.5rem; /* 小屏幕字体大小 */
-                margin-bottom: 0;
-            }
-        }
-        /* 评分和总集数 */
-        .rating, .episode-count {
-            position: absolute;
-            background-color: rgba(0, 0, 0, 0.6); /* 半透明背景色 */
-            color: white;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-size: 0.8rem;
-            display: none; /* 默认隐藏 */
-        }
-
-        .rating {
-            top: 5px;
-            left: 5px;
-        }
-
-        .episode-count {
-            top: 5px;
-            right: 5px; /* 右上角定位 */
-        }
-
-        .poster-item:hover .rating,
-        .poster-item:hover .episode-count {
-            display: inline-block; /* 鼠标悬停时显示 */
-        }
-
-        @media (max-width: 768px) {
-            .rating, .episode-count {
-            padding: 1px 3px;
-            font-size: 0.5rem;
-            }
-        }
-
-        /* 海报详情 */
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-        }
-
-        .modal-content {
-            background-color: rgba(255, 255, 255, 0.9); /* White background with transparency */
-            backdrop-filter: blur(5px); /* Blur effect */
-            margin: 10% auto; /* 10% from the top and centered */
-            padding: 20px;
-            border: 1px solid #888;
-            width: 80%; /* Could be more or less, depending on screen size */
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            max-width: 1000px;
-            border-radius: 10px;
-        }
-
-        /* 确保InfoCard-header使用Flexbox布局 */
-        .InfoCard-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            width: 100%;
-            border-bottom: var(--bs-modal-header-border-width) solid var(--bs-modal-header-border-color);
-            padding-bottom: 15px;
-        }
-
-        /* 可选：添加一些间距和样式 */
-        .InfoCard-title {
-            margin: 0;
-            font-size: clamp(14px, 1.2vw, 18px);
-        }
-
-        .btn-close {
-            margin: 0;
-        }
-
-        .modal-poster {
-            margin-right: 20px;
-        }
-
-        .modal-poster img {
-            max-width: 200px;
-            max-height: 300px;
-            border-radius: 5px;
-        }
-
-        .modal-details {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-
-        .modal-details h3 {
-            margin: 0;
-            font-size: 1.1em;
-            text-align: center;
-        }
-
-        .modal-details p {
-            margin: 5px 0;
-            font-size: 0.8em;
-        }
-
-        .modal-overview {
-            margin-top: 20px;
-            width: 100%;
-            font-size: 1em;
-        }
-
-        .close {
-            color: #aaa;
-            float: right;
-            font-size: 28px;
-            font-weight: bold;
-            cursor: pointer;
-        }
-
-        .close:hover,
-        .close:focus {
-            color: black;
-            text-decoration: none;
-        }
- 
-        /* 小屏布局 */
-        @media (max-width: 768px) {
-            .modal-content {
-                width: 90%;
-            }
-
-            .modal-poster {
-                margin: 15px auto;
-            }
-
-            .modal-poster img {
-                max-width: 100%;
-                max-height: 200px;
-            }
-
-            .modal-details h3 {
-                font-size: 1.2em;
-            }
-
-            .modal-details p {
-                font-size: 0.8em;
-            }
-
-            .modal-overview {
-                font-size: 0.9em;
-            }
-            .modal-header {
-                /* flex-direction: column; */
-                width: 100%;
-            }
-        }
-
-        /* 下载管理 */
-        /* 按钮样式 */
-       .action-button {
-            background-color: rgb(255, 255, 255);
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            border-radius: 5px;
-        }
-
-        .action-button:hover {
-            background-color: rgb(231, 245, 255);
-        }
-
-        .action-button svg {
-            width: 1.5rem;
-            height: 1.5rem;
-        }
-
-        .task-list {
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-        }
-
-        .task-item {
-            display: flex;
-            flex-direction: column;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: clamp(8px, 1.2vw, 14px);
-        }
-
-        .task-item.selected {
-            background-color: #2962be;
-            color: white;
-        }
-
-        .task-name {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .task-progress {
-            margin-bottom: 10px;
-        }
-
-        .task-progress .progress {
-            height: 15px;
-        }
-
-        .progress-bar {
-            background-image: linear-gradient(
-                45deg, 
-                rgba(255, 255, 255, .15) 25%, 
-                transparent 25%, 
-                transparent 50%, 
-                rgba(255, 255, 55, .15) 50%, 
-                rgba(255, 255, 255, .15) 75%, 
-                transparent 75%, 
-                transparent
-            );
-            background-size: 1rem 1rem;
-            animation: 1s steps(20) infinite barberpole;
-        }
-
-        .task-details {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .task-details div {
-            display: flex;
-            align-items: center;
-        }
-
-        @keyframes barberpole {
-            from { background-position: 0 0; }
-            to { background-position: 1rem 0; }
-        }
-        /* 卡片样式 */
-        .card {
-            padding: 0;
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-        }
-        .card-header {
-            background-color: #4770dc;
-            color: #fff;
-            border-radius: 10px 10px 0 0;
-            padding: 8px;
-            font-size: clamp(12px, 1.2vw, 16px);
-            font-weight: bold;
-        }
-    </style>
+    <link href="/static/css/variables.css" rel="stylesheet">
+    <link href="/static/css/style.css" rel="stylesheet">
+    <link href="/static/css/page-styles.css" rel="stylesheet">
+    <link href="/static/css/ui-components.css" rel="stylesheet">
 </head>
 <body>
     <!-- Toast 消息通知 -->
@@ -721,31 +32,36 @@
             <button class="navbar-toggler" type="button" data-bs-toggle="offcanvas" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="search-form ms-auto">
-                <button class="btn btn-sm btn-outline-success search-icon" type="button" data-bs-toggle="offcanvas" data-bs-target="#searchOffcanvas" aria-controls="searchOffcanvas">
-                    <i class="fas fa-search" style="font-style: normal;">搜索</i>
+            <!-- 移动端顶栏操作区：主题切换 + 用户下拉菜单 -->
+            <div class="topbar-actions d-md-none ms-auto">
+                <button id="topbarThemeToggleBtn" class="topbar-icon-btn" title="切换日间/夜间模式">
+                    <span class="icon-sun">&#9728;</span>
+                    <span class="icon-moon" style="display:none;">&#9790;</span>
                 </button>
-                <form class="d-flex" action="/search" method="GET" id="searchForm">
-                    <input class="form-control me-2" type="search" name="q" placeholder="请输入名称" aria-label="Search">
-                    <button class="btn btn-sm btn-outline-success search-button" type="submit">搜索</button>
-                </form>
+                <div class="dropdown">
+                    <button class="topbar-icon-btn" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="用户信息">
+                        <i class="bi bi-person-circle"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end topbar-dropdown-menu">
+                        <li class="dropdown-header d-flex align-items-center gap-2">
+                            <img src="{{ avatar_url }}" alt="avatar" class="topbar-avatar-dropdown">
+                            <span class="nickname">{{ nickname }}</span>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="#" id="topbar-open-profile">编辑资料</a></li>
+                        <li class="d-md-none"><a class="dropdown-item" href="/docs" target="_blank">产品文档</a></li>
+                        <li>
+                            <a class="dropdown-item d-flex align-items-center gap-2" href="#" id="topbar-open-version-modal">
+                                关于程序
+                                <img class="new-version" id="topbar-new-version-indicator" style="display: none;" src="/static/img/new.png" alt="新版本">
+                            </a>
+                        </li>
+                        <li><a class="dropdown-item" href="{{ url_for('logout') }}">退出登录</a></li>
+                    </ul>
+                </div>
             </div>
         </div>
     </nav>
-
-    <!-- 搜索 Offcanvas -->
-    <div class="offcanvas offcanvas-end" tabindex="-1" id="searchOffcanvas" aria-labelledby="searchOffcanvasLabel">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title" id="searchOffcanvasLabel">搜索</h5>
-            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
-        </div>
-        <div class="offcanvas-body">
-            <form action="/search" method="GET">
-                <input class="form-control me-2" type="search" name="q" placeholder="请输入名称" aria-label="Search">
-                <button class="btn btn-sm btn-outline-success mt-2 search-button" type="submit" style="margin-right: 5px;">搜索</button>
-            </form>
-        </div>
-    </div>
 
     <div class="container-fluid">
         <div class="row">
@@ -760,6 +76,16 @@
                             <img src="/static/img/favicon.ico" alt="Logo" style="height: 25px; margin-left: 5px; margin-right: 5px; vertical-align: text-bottom;">
                             MediaMaster
                         </a>
+                    </div>
+                    <div class="sidebar-search px-3 pb-1">
+                        <form action="/search" method="GET" id="searchForm">
+                            <div class="search-box">
+                                <input class="form-control" type="search" name="q" placeholder="本地搜索" aria-label="Search">
+                                <button class="search-submit" type="submit">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </form>
                     </div>
                     <ul class="nav flex-column">
                         <li class="nav-item">
@@ -805,16 +131,31 @@
                             </a>
                         </li>
                     </ul>
+                    <div class="theme-toggle">
+                        <button id="themeToggleBtn" type="button" title="切换日间/夜间模式">
+                            <span class="icon-sun">&#9728;</span>
+                            <span class="icon-moon" style="display:none;">&#9790;</span>
+                            <span id="themeLabel">日间模式</span>
+                        </button>
+                    </div>
                     <div class="user">
                         <img src="{{ avatar_url }}" alt="avatar" class="avatar">
                         <p class="nickname">{{ nickname }}</p>
                         <a class="nav-link logout" href="{{ url_for('logout') }}">退出登录</a>
                     </div>
-                    <div class="version">
-                        <p>
-                            <a href="#" id="open-version-modal">Version：{{ version }}
-                            <img class="new-version" id="new-version-indicator" style="display: none;" src="/static/img/new.png" alt="发现新版本"></a>
-                        </p>
+                    <div class="docs-version-row">
+                        <div class="version">
+                            <p>
+                                <a href="#" id="open-version-modal">Version：{{ version }}
+                                <img class="new-version" id="new-version-indicator" style="display: none;" src="/static/img/new.png" alt="发现新版本"></a>
+                            </p>
+                        </div>
+                        <div class="docs-section">
+                            <a href="/docs" class="docs-link" target="_blank">
+                                <i class="bi bi-book"></i>
+                                <span>产品文档</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </nav>
@@ -960,16 +301,10 @@
         const sidebar = document.getElementById('sidebarMenu');
         const content = document.querySelector('.content');
         const navbarToggler = document.querySelector('.navbar-toggler');
-        const searchForm = document.getElementById('searchForm');
-        const searchIcon = document.querySelector('.search-icon');
-
         // 初始状态下，侧边栏默认展开
         if (window.innerWidth > 768) {
             sidebar.classList.remove('offcanvas');
             content.classList.remove('collapsed');
-            searchForm.style.display = 'flex';
-        } else {
-            searchForm.style.display = 'none';
         }
 
         // 监听窗口大小变化
@@ -977,21 +312,29 @@
             if (window.innerWidth > 768) {
                 sidebar.classList.remove('offcanvas');
                 content.classList.remove('collapsed');
-                searchForm.style.display = 'flex';
             } else {
                 sidebar.classList.add('offcanvas');
                 content.classList.add('collapsed');
-                searchForm.style.display = 'none';
             }
         });
     });
 
-    // 打开用户资料Modal
-    const avatar = document.querySelector('.avatar');
-    avatar.addEventListener('click', function () {
+    // 打开用户资料Modal（侧边栏头像 + 侧边栏昵称 + 顶栏下拉菜单）
+    function openUserProfileModal() {
         const modal = new bootstrap.Modal(document.getElementById('userProfileModal'));
         modal.show();
-    });
+    }
+    const avatar = document.querySelector('.avatar');
+    if (avatar) avatar.addEventListener('click', openUserProfileModal);
+    const sidebarNickname = document.querySelector('.user .nickname');
+    if (sidebarNickname) sidebarNickname.addEventListener('click', openUserProfileModal);
+    const topbarProfileLink = document.getElementById('topbar-open-profile');
+    if (topbarProfileLink) {
+        topbarProfileLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            openUserProfileModal();
+        });
+    }
 
     // 处理用户资料表单提交
     document.getElementById('userProfileForm').addEventListener('submit', function(event) {
@@ -1013,8 +356,16 @@
         .then(data => {
             if (data.success) {
                 showToast(data.message, 'success');
-                // 更新页面上的昵称显示
-                document.querySelector('.nickname').textContent = document.getElementById('nickname').value || document.querySelector('.nickname').textContent;
+                // 更新页面上的昵称和头像显示
+                const newNickname = document.getElementById('nickname').value;
+                document.querySelectorAll('.nickname').forEach(function(el) { el.textContent = newNickname || el.textContent; });
+                if (avatarFile) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        document.querySelectorAll('.avatar, .topbar-avatar').forEach(function(el) { el.src = e.target.result; });
+                    };
+                    reader.readAsDataURL(avatarFile);
+                }
                 // 关闭模态框
                 const modal = bootstrap.Modal.getInstance(document.getElementById('userProfileModal'));
                 modal.hide();
@@ -1085,11 +436,12 @@
 
             // 如果有新版本，显示 "New" 标签
             if (data.is_update_available) {
-                const newVersionIndicator = document.getElementById('new-version-indicator');
-                if (newVersionIndicator) {
-                    newVersionIndicator.style.display = 'inline';
-                    newVersionIndicator.classList.add('blinking'); // 添加闪烁效果
-                }
+                [document.getElementById('new-version-indicator'), document.getElementById('topbar-new-version-indicator')].forEach(function(el) {
+                    if (el) {
+                        el.style.display = 'inline';
+                        el.classList.add('blinking');
+                    }
+                });
             }
         } catch (error) {
             console.error('检查更新失败:', error);
@@ -1169,13 +521,18 @@
         }
     });
 
-    // 点击版本号打开模态框
-    document.getElementById('open-version-modal').addEventListener('click', function (event) {
+    // 点击版本号打开模态框（侧边栏 + 顶栏）
+    function openVersionModal(event) {
         event.preventDefault();
         const modalElement = document.getElementById('versionUpdateModal');
         const modal = new bootstrap.Modal(modalElement);
         modal.show();
-    });
+    }
+    document.getElementById('open-version-modal').addEventListener('click', openVersionModal);
+    const topbarVersionLink = document.getElementById('topbar-open-version-modal');
+    if (topbarVersionLink) {
+        topbarVersionLink.addEventListener('click', openVersionModal);
+    }
 
     // 绑定更新按钮事件
     document.getElementById('perform-latest-update-btn').addEventListener('click', function() {
@@ -1307,6 +664,42 @@
             });
         }
     });
+
+    // ====== 日间/夜间模式切换 ======
+    (function() {
+        const THEME_KEY = 'mediamaster-theme';
+        const btns = document.querySelectorAll('#themeToggleBtn, #topbarThemeToggleBtn');
+        const iconSuns = document.querySelectorAll('.icon-sun');
+        const iconMoons = document.querySelectorAll('.icon-moon');
+        const label = document.getElementById('themeLabel');
+
+        function setTheme(theme) {
+            if (theme === 'dark') {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                iconSuns.forEach(el => el.style.display = 'none');
+                iconMoons.forEach(el => el.style.display = 'inline');
+                if (label) label.textContent = '夜间模式';
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+                iconSuns.forEach(el => el.style.display = 'inline');
+                iconMoons.forEach(el => el.style.display = 'none');
+                if (label) label.textContent = '日间模式';
+            }
+            localStorage.setItem(THEME_KEY, theme);
+        }
+
+        // 初始化：读取 localStorage 中的主题偏好
+        const savedTheme = localStorage.getItem(THEME_KEY) || 'light';
+        setTheme(savedTheme);
+
+        // 切换按钮点击 — 同时绑定侧边栏和顶栏的主题按钮
+        btns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                const current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+                setTheme(current === 'dark' ? 'light' : 'dark');
+            });
+        });
+    })();
 </script>
 </body>
 </html>
