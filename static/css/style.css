@@ -348,6 +348,8 @@ a:hover { color: var(--primary-hover); }
     animation: blink 1.8s ease-in-out infinite;
     color: var(--sidebar-accent);
     transition: opacity 0.3s;
+    width: 36px;
+    height: 13px;
 }
 
 /* ====== 移动端顶栏操作区（图标按钮风格，与 navbar-toggler 一致） ====== */

@@ -2,9 +2,14 @@
 
 所有显著的变更都会记录在此文档中。此项目遵循 [语义化版本控制](https://semver.org/spec/v2.0.0.html)。
 
+## [2.6.1] - 2026-07-13
+
+### 修复
+- 修复发现版本更新时，新版本提醒图标大小显示异常的问题。
+
 ## [2.6.0] - 2026-07-13
 
-###全新 UI 设计
+### 全新 UI 设计
 - 全面支持日间/夜间模式，覆盖登录页、模态框、表格、按钮等所有界面元素
 - 大屏适配优化，页面内容区全宽填充，消除右侧空白区域
 - 移动端交互升级，顶栏新增主题切换和用户菜单，与桌面端体验一致
@@ -948,3 +953,4 @@
 [2.5.22]: https://github.com/smysong/mediamaster-v2/releases/tag/v2.5.22
 [2.5.23]: https://github.com/smysong/mediamaster-v2/releases/tag/v2.5.23
 [2.6.0]: https://github.com/smysong/mediamaster-v2/releases/tag/v2.6.0
+[2.6.1]: https://github.com/smysong/mediamaster-v2/releases/tag/v2.6.1
