@@ -2691,17 +2691,102 @@ def perform_update():
                 continue
         
         if not git_pull_success:
-            error_message = f"所有地址更新均失败，最后错误信息: {last_error}"
-            logger.error(error_message)
-            return jsonify({"error": error_message}), 500
+            # 备用方案：通过下载 release tar 包的方式更新
+            logger.info("所有 git 代理均失败，尝试通过下载 tar 包的方式更新...")
+            tarball_success = False
+            try:
+                import tempfile, tarfile, shutil
+                # 重新获取目标版本标签
+                target_tag = None
+                if update_type == 'prerelease':
+                    for repo_url in [
+                        "https://api.github.com/repos/KK-325/mediamaster-v2/releases",
+                        "https://gh.llkk.cc/https://api.github.com/repos/KK-325/mediamaster-v2/releases"
+                    ]:
+                        try:
+                            response = requests.get(repo_url, timeout=8)
+                            if response.status_code == 200:
+                                for release in response.json():
+                                    if release.get('prerelease'):
+                                        target_tag = release.get('tag_name')
+                                        break
+                                if target_tag:
+                                    break
+                        except Exception:
+                            continue
+                else:
+                    for repo_url in [
+                        "https://api.github.com/repos/KK-325/mediamaster-v2/releases/latest",
+                        "https://gh.llkk.cc/https://api.github.com/repos/KK-325/mediamaster-v2/releases/latest"
+                    ]:
+                        try:
+                            response = requests.get(repo_url, timeout=8)
+                            if response.status_code == 200:
+                                target_tag = response.json().get('tag_name')
+                                break
+                        except Exception:
+                            continue
 
-        # 步骤2.5: 重新删除定制版本废弃的解析器文件
+                if target_tag:
+                    logger.info(f"目标版本标签: {target_tag}")
+                    tarball_urls = [
+                        f"https://github.com/KK-325/mediamaster-v2/archive/refs/tags/{target_tag}.tar.gz",
+                        f"https://gh.llkk.cc/https://github.com/KK-325/mediamaster-v2/archive/refs/tags/{target_tag}.tar.gz",
+                    ]
+                    for tarball_url in tarball_urls:
+                        try:
+                            logger.info(f"尝试下载 tar 包: {tarball_url}")
+                            response = requests.get(tarball_url, timeout=120, stream=True)
+                            if response.status_code == 200:
+                                with tempfile.NamedTemporaryFile(suffix='.tar.gz', delete=False) as tmp_file:
+                                    for chunk in response.iter_content(chunk_size=8192):
+                                        tmp_file.write(chunk)
+                                    tmp_path = tmp_file.name
+
+                                extract_dir = tempfile.mkdtemp()
+                                with tarfile.open(tmp_path, 'r:gz') as tar:
+                                    tar.extractall(extract_dir)
+
+                                extracted_items = os.listdir(extract_dir)
+                                if extracted_items:
+                                    source_dir = os.path.join(extract_dir, extracted_items[0])
+                                    for item in os.listdir(source_dir):
+                                        if item == '.git':
+                                            continue
+                                        src = os.path.join(source_dir, item)
+                                        dst = os.path.join('/app', item)
+                                        if os.path.isdir(src):
+                                            if os.path.exists(dst):
+                                                shutil.rmtree(dst)
+                                            shutil.copytree(src, dst)
+                                        else:
+                                            shutil.copy2(src, dst)
+                                    tarball_success = True
+                                    logger.info("通过下载 tar 包方式更新成功")
+
+                                os.unlink(tmp_path)
+                                shutil.rmtree(extract_dir)
+                                break
+                        except Exception as e:
+                            logger.warning(f"下载 tar 包失败 ({tarball_url}): {e}")
+                            continue
+            except Exception as e:
+                logger.error(f"tar 包下载备用方案失败: {e}")
+
+            if not tarball_success:
+                error_message = f"所有地址更新均失败，最后错误信息: {last_error}"
+                logger.error(error_message)
+                return jsonify({"error": error_message}), 500
+
+        # 步骤2.5: 重新删除定制版本废弃的解析器文件和模板文件
         # git checkout . / git pull 可能恢复这些文件，需在更新后重新清理
         obsolete_files = [
             '/app/movie_bthd.py',
             '/app/tvshow_hdtv.py',
             '/app/movie_tvshow_btsj6.py',
-            '/app/movie_tvshow_seedhub.py'
+            '/app/movie_tvshow_seedhub.py',
+            '/app/templates/recommendations.html',
+            '/app/templates/manual_search.html'
         ]
         for obsolete_file in obsolete_files:
             if os.path.exists(obsolete_file):
