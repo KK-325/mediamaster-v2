@@ -2476,31 +2476,12 @@ def notify_tmm(media_type):
         logging.error(f"通知 tinyMediaManager 失败: {e}")
 
 def send_notification(title_text):
-    # 通知功能
+    # 统一通知（Bark + 钉钉双通道）
     try:
-        notification_enabled = config.get("notification", "")
-        if notification_enabled.lower() != "true":  # 显式检查是否为 "true"
-            logging.info("通知功能未启用，跳过发送通知。")
-            return
-        api_key = config.get("notification_api_key", "")
-        if not api_key:
-            logging.error("通知API Key未在配置文件中找到，无法发送通知。")
-            return
-        api_url = f"https://api.day.app/{api_key}"
-        data = {
-            "title": "文件转移",
-            "body": f"{title_text}已入库"
-        }
-        headers = {'Content-Type': 'application/json'}
-        response = requests.post(api_url, data=json.dumps(data), headers=headers)
-        if response.status_code == 200:
-            logging.info("通知发送成功: %s", response.text)
-        else:
-            logging.error("通知发送失败: %s %s", response.status_code, response.text)
-    except KeyError as e:
-        logging.error(f"配置文件中缺少必要的键: {e}")
-    except requests.RequestException as e:
-        logging.error(f"网络请求出现错误: {e}")
+        from notifier import Notifier
+        Notifier(config).send("文件转移", f"{title_text}已入库")
+    except Exception as e:
+        logging.error(f"发送通知失败: {e}")
 
 class CustomFileHandler(FileSystemEventHandler):
     def __init__(self):

@@ -71,6 +71,16 @@
                                         <i class="bi bi-info-circle me-1"></i> Bark API密钥用于接收推送通知。
                                     </div>
                                     {% endif %}
+                                    {% if key == 'dingtalk_webhook' %}
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i> 钉钉机器人Webhook地址（以https://oapi.dingtalk.com/robot/send?access_token=开头）。
+                                    </div>
+                                    {% endif %}
+                                    {% if key == 'dingtalk_secret' %}
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i> 钉钉机器人加签密钥（SEC开头的字符串），与Webhook配合使用实现安全验证。
+                                    </div>
+                                    {% endif %}
                                 </div>
                                 {% endfor %}
                             </div>
@@ -957,12 +967,16 @@
 
         // 动态显示/隐藏下载器相关配置项
         function toggleDownloaderFields() {
-            // 根据 notification 开关显示/隐藏 notification_api_key
+            // 根据 notification 开关显示/隐藏通知相关配置项
             var notificationChecked = $('#notification').is(':checked');
             if (notificationChecked) {
                 $('#form-group-notification_api_key').show();
+                $('#form-group-dingtalk_webhook').show();
+                $('#form-group-dingtalk_secret').show();
             } else {
                 $('#form-group-notification_api_key').hide();
+                $('#form-group-dingtalk_webhook').hide();
+                $('#form-group-dingtalk_secret').hide();
             }
 
             // 根据 actor_nfo 开关显示/隐藏相关配置项

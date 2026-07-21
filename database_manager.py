@@ -192,6 +192,8 @@ def create_tables():
     default_configs = [
         ("notification", "False"),
         ("notification_api_key", "your_api_key"),
+        ("dingtalk_webhook", ""),
+        ("dingtalk_secret", ""),
         ("chromedriver_path", ""),
         ("dateadded", "False"),
         ("actor_nfo", "False"),
@@ -506,6 +508,8 @@ def ensure_all_configs_exist():
     default_configs = [
         ("notification", "False"),
         ("notification_api_key", "your_api_key"),
+        ("dingtalk_webhook", ""),
+        ("dingtalk_secret", ""),
         ("chromedriver_path", ""),
         ("dateadded", "False"),
         ("actor_nfo", "False"),
@@ -614,6 +618,8 @@ def check_config_data():
     default_configs = {
         "notification": "False",
         "notification_api_key": "your_api_key",
+        "dingtalk_webhook": "",
+        "dingtalk_secret": "",
         "chromedriver_path": "",
         "dateadded": "False",
         "actor_nfo": "False",

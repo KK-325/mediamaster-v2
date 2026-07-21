@@ -1209,6 +1209,8 @@ GROUP_MAPPING = {
     "消息通知": {
         "notification": {"type": "switch", "label": "消息通知"},
         "notification_api_key": {"type": "password", "label": "Bark API密钥"},
+        "dingtalk_webhook": {"type": "password", "label": "钉钉机器人Webhook"},
+        "dingtalk_secret": {"type": "password", "label": "钉钉加签密钥"},
     },
     "媒体添加时间": {
         "dateadded": {"type": "switch", "label": "发行日期作为媒体添加日期"}

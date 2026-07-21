@@ -1,11 +1,24 @@
 FROM smysong/mediamaster-v2:latest
 
-# 仅覆盖定制修改的 app.py 和 versions，其余保留 smysong v2.6.2 原版
+# 覆盖定制修改的文件
 COPY app.py /app/app.py
 COPY versions /app/versions
+COPY notifier.py /app/notifier.py
+COPY check_subscr.py /app/check_subscr.py
+COPY downloader.py /app/downloader.py
+COPY sync.py /app/sync.py
+COPY indexer.py /app/indexer.py
+COPY site_test.py /app/site_test.py
+COPY database_manager.py /app/database_manager.py
+COPY templates/base.html /app/templates/base.html
+COPY templates/dashboard.html /app/templates/dashboard.html
+COPY templates/settings.html /app/templates/settings.html
 
 # 删除定制版本废弃的解析器文件
 RUN rm -f /app/movie_bthd.py /app/tvshow_hdtv.py /app/movie_tvshow_btsj6.py /app/movie_tvshow_seedhub.py
+
+# 删除已移除的模板文件
+RUN rm -f /app/templates/recommendations.html /app/templates/manual_search.html
 
 WORKDIR /app
 EXPOSE 8888
