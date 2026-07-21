@@ -2928,10 +2928,10 @@ def check_update():
         current_version = APP_VERSION
 
         # GitHub API 地址和代理地址
-        repo_url = "https://api.github.com/repos/smysong/mediamaster-v2/releases"
-        latest_release_url = "https://api.github.com/repos/smysong/mediamaster-v2/releases/latest"
-        proxy_url = "https://gh.llkk.cc/https://api.github.com/repos/smysong/mediamaster-v2/releases"
-        proxy_latest_url = "https://gh.llkk.cc/https://api.github.com/repos/smysong/mediamaster-v2/releases/latest"
+        repo_url = "https://api.github.com/repos/KK-325/mediamaster-v2/releases"
+        latest_release_url = "https://api.github.com/repos/KK-325/mediamaster-v2/releases/latest"
+        proxy_url = "https://gh.llkk.cc/https://api.github.com/repos/KK-325/mediamaster-v2/releases"
+        proxy_latest_url = "https://gh.llkk.cc/https://api.github.com/repos/KK-325/mediamaster-v2/releases/latest"
 
         # 获取所有发布版本
         try:
@@ -3074,7 +3074,7 @@ def perform_update():
         logger.info(f"开始执行更新操作，更新类型: {update_type}")
         
         # 步骤1: 获取所有代理并按速度排序
-        original_url = "https://github.com/smysong/mediamaster-v2.git"
+        original_url = "https://github.com/KK-325/mediamaster-v2.git"
         proxy_list = get_all_proxies_sorted(original_url)
         
         # 步骤2: 尝试每个代理进行更新
@@ -3085,10 +3085,18 @@ def perform_update():
             try:
                 logger.info(f"尝试使用地址: {proxy_url}")
                 
+                # 如果是 github.com 地址且配置了 GITHUB_TOKEN，注入 token 实现私有仓库鉴权
+                effective_url = proxy_url
+                github_token = os.environ.get('GITHUB_TOKEN', '').strip()
+                if github_token and 'github.com' in proxy_url and '@' not in proxy_url:
+                    # 把 https://github.com/xxx/yyy.git 改成 https://x-access-token:TOKEN@github.com/xxx/yyy.git
+                    effective_url = proxy_url.replace('https://github.com', f'https://x-access-token:{github_token}@github.com')
+                    logger.info("已检测到 GITHUB_TOKEN 环境变量，将使用 token 鉴权访问 fork 仓库")
+                
                 # 设置 Git 远程仓库地址
-                logger.info(f"正在设置 Git 远程仓库地址: {proxy_url}")
+                logger.info(f"正在设置 Git 远程仓库地址: {proxy_url if effective_url == proxy_url else proxy_url.split('@')[-1]}")
                 set_remote_result = subprocess.run(
-                    ['git', 'remote', 'set-url', 'origin', proxy_url],
+                    ['git', 'remote', 'set-url', 'origin', effective_url],
                     capture_output=True,
                     text=True,
                     cwd='/app'
@@ -3101,12 +3109,17 @@ def perform_update():
                 
                 # 重置本地更改，确保干净的更新环境
                 logger.info("正在放弃本地更改...")
-                checkout_result = subprocess.run(
-                    ['git', 'checkout', '.'],
-                    capture_output=True,
-                    text=True,
-                    cwd='/app'
-                )
+                try:
+                    checkout_result = subprocess.run(
+                        ['git', 'checkout', '.'],
+                        capture_output=True,
+                        text=True,
+                        cwd='/app',
+                        timeout=30
+                    )
+                except subprocess.TimeoutExpired:
+                    logger.warning("放弃本地更改超时（30秒），跳过此步骤")
+                    checkout_result = subprocess.run(['echo'], capture_output=True, text=True)
                 
                 if checkout_result.returncode != 0:
                     logger.warning(f"放弃本地更改失败: {checkout_result.stderr}")
@@ -3120,8 +3133,8 @@ def perform_update():
                     
                     # 先获取所有发布版本信息
                     repo_urls = [
-                        "https://api.github.com/repos/smysong/mediamaster-v2/releases",
-                        "https://gh.llkk.cc/https://api.github.com/repos/smysong/mediamaster-v2/releases"
+                        "https://api.github.com/repos/KK-325/mediamaster-v2/releases",
+                        "https://gh.llkk.cc/https://api.github.com/repos/KK-325/mediamaster-v2/releases"
                     ]
                     
                     releases = None
@@ -3158,12 +3171,19 @@ def perform_update():
                     
                     # 拉取指定标签的代码
                     logger.info("正在从 Git 仓库拉取最新预发布版本代码...")
-                    fetch_result = subprocess.run(
-                        ['git', 'fetch', '--all'],
-                        capture_output=True,
-                        text=True,
-                        cwd='/app'
-                    )
+                    try:
+                        fetch_result = subprocess.run(
+                            ['git', 'fetch', '--all'],
+                            capture_output=True,
+                            text=True,
+                            cwd='/app',
+                            timeout=60
+                        )
+                    except subprocess.TimeoutExpired:
+                        error_message = "Git fetch 超时（60秒）"
+                        logger.error(error_message)
+                        last_error = error_message
+                        continue
                     
                     if fetch_result.returncode != 0:
                         error_message = f"Git fetch 失败: {fetch_result.stderr}"
@@ -3173,12 +3193,19 @@ def perform_update():
                     
                     # 检出特定标签
                     logger.info(f"正在检出预发布版本 {prerelease_version_tag}...")
-                    checkout_result = subprocess.run(
-                        ['git', 'checkout', prerelease_version_tag],
-                        capture_output=True,
-                        text=True,
-                        cwd='/app'
-                    )
+                    try:
+                        checkout_result = subprocess.run(
+                            ['git', 'checkout', prerelease_version_tag],
+                            capture_output=True,
+                            text=True,
+                            cwd='/app',
+                            timeout=30
+                        )
+                    except subprocess.TimeoutExpired:
+                        error_message = "Git checkout 超时（30秒）"
+                        logger.error(error_message)
+                        last_error = error_message
+                        continue
                     
                     if checkout_result.returncode != 0:
                         error_message = f"Git checkout 失败: {checkout_result.stderr}"
@@ -3187,12 +3214,18 @@ def perform_update():
                         continue
                     
                     # 拉取代码
-                    pull_result = subprocess.run(
-                        ['git', 'pull', 'origin', prerelease_version_tag],
-                        capture_output=True,
-                        text=True,
-                        cwd='/app'
-                    )
+                    try:
+                        pull_result = subprocess.run(
+                            ['git', 'pull', 'origin', prerelease_version_tag],
+                            capture_output=True,
+                            text=True,
+                            cwd='/app',
+                            timeout=60
+                        )
+                    except subprocess.TimeoutExpired:
+                        last_error = "Git pull 超时（60秒）"
+                        logger.warning(f"Git 拉取预发布版本失败: {last_error}")
+                        continue
                     
                     if pull_result.returncode == 0:
                         logger.info(f"Git 拉取预发布版本成功: {pull_result.stdout}")
@@ -3207,8 +3240,8 @@ def perform_update():
                     
                     # 获取所有发布版本信息
                     repo_urls = [
-                        "https://api.github.com/repos/smysong/mediamaster-v2/releases/latest",
-                        "https://gh.llkk.cc/https://api.github.com/repos/smysong/mediamaster-v2/releases/latest"
+                        "https://api.github.com/repos/KK-325/mediamaster-v2/releases/latest",
+                        "https://gh.llkk.cc/https://api.github.com/repos/KK-325/mediamaster-v2/releases/latest"
                     ]
                     
                     latest_stable_release = None
@@ -3232,12 +3265,19 @@ def perform_update():
                     
                     # 拉取指定标签的代码
                     logger.info("正在从 Git 仓库拉取最新稳定版本代码...")
-                    fetch_result = subprocess.run(
-                        ['git', 'fetch', '--all'],
-                        capture_output=True,
-                        text=True,
-                        cwd='/app'
-                    )
+                    try:
+                        fetch_result = subprocess.run(
+                            ['git', 'fetch', '--all'],
+                            capture_output=True,
+                            text=True,
+                            cwd='/app',
+                            timeout=60
+                        )
+                    except subprocess.TimeoutExpired:
+                        error_message = "Git fetch 超时（60秒）"
+                        logger.error(error_message)
+                        last_error = error_message
+                        continue
                     
                     if fetch_result.returncode != 0:
                         error_message = f"Git fetch 失败: {fetch_result.stderr}"
@@ -3247,12 +3287,19 @@ def perform_update():
                     
                     # 检出特定标签
                     logger.info(f"正在检出稳定版本 {stable_version_tag}...")
-                    checkout_result = subprocess.run(
-                        ['git', 'checkout', stable_version_tag],
-                        capture_output=True,
-                        text=True,
-                        cwd='/app'
-                    )
+                    try:
+                        checkout_result = subprocess.run(
+                            ['git', 'checkout', stable_version_tag],
+                            capture_output=True,
+                            text=True,
+                            cwd='/app',
+                            timeout=30
+                        )
+                    except subprocess.TimeoutExpired:
+                        error_message = "Git checkout 超时（30秒）"
+                        logger.error(error_message)
+                        last_error = error_message
+                        continue
                     
                     if checkout_result.returncode != 0:
                         error_message = f"Git checkout 失败: {checkout_result.stderr}"
@@ -3261,12 +3308,18 @@ def perform_update():
                         continue
                     
                     # 拉取代码
-                    pull_result = subprocess.run(
-                        ['git', 'pull', 'origin', stable_version_tag],
-                        capture_output=True,
-                        text=True,
-                        cwd='/app'
-                    )
+                    try:
+                        pull_result = subprocess.run(
+                            ['git', 'pull', 'origin', stable_version_tag],
+                            capture_output=True,
+                            text=True,
+                            cwd='/app',
+                            timeout=60
+                        )
+                    except subprocess.TimeoutExpired:
+                        last_error = "Git pull 超时（60秒）"
+                        logger.warning(f"Git 拉取稳定版本失败: {last_error}")
+                        continue
                     
                     if pull_result.returncode == 0:
                         logger.info(f"Git 拉取稳定版本成功: {pull_result.stdout}")
@@ -3285,6 +3338,19 @@ def perform_update():
             error_message = f"所有地址更新均失败，最后错误信息: {last_error}"
             logger.error(error_message)
             return jsonify({"error": error_message}), 500
+
+        # 步骤2.5: 重新删除定制版本废弃的解析器文件
+        # git checkout . / git pull 可能恢复这些文件，需在更新后重新清理
+        obsolete_files = [
+            '/app/movie_bthd.py',
+            '/app/tvshow_hdtv.py',
+            '/app/movie_tvshow_btsj6.py',
+            '/app/movie_tvshow_seedhub.py'
+        ]
+        for obsolete_file in obsolete_files:
+            if os.path.exists(obsolete_file):
+                os.remove(obsolete_file)
+                logger.info(f"已删除废弃文件: {obsolete_file}")
 
         # 步骤3: 安装依赖（如果有新的依赖）
         logger.info("正在安装新依赖...")
