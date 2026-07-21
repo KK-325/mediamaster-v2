@@ -58,14 +58,10 @@ def main():
     clear_index_directory()
 
     scripts = {
-        "movie_bthd.py": "高清影视之家",
-        "tvshow_hdtv.py": "高清剧集网",
         "movie_tvshow_btys.py": "BT影视",
         "movie_tvshow_bt0.py": "不太灵影视",
         "movie_tvshow_gy.py": "观影",
-        "movie_tvshow_btsj6.py": "BT世界网",
         "movie_tvshow_1lou.py": "1LOU",
-        "movie_tvshow_seedhub.py": "SeedHub",
         "movie_tvshow_jackett.py": "Jackett"
     }
 

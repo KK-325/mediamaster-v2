@@ -95,21 +95,9 @@
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link {% if request.path == url_for('recommendations') %}active{% endif %}" href="{{ url_for('recommendations') }}">
-                                <i class="bi bi-calendar3"></i>
-                                热门推荐
-                            </a>
-                        </li>
-                        <li class="nav-item">
                             <a class="nav-link {% if request.path == url_for('subscriptions') %}active{% endif %}" href="{{ url_for('subscriptions') }}">
                                 <i class="bi bi-calendar-check"></i>
                                 正在订阅
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link {% if request.path == url_for('manual_search') %}active{% endif %}" href="{{ url_for('manual_search') }}">
-                                <i class="bi bi-search"></i>
-                                资源搜索
                             </a>
                         </li>
                         <li class="nav-item">

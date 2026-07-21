@@ -142,16 +142,6 @@ class SiteTester:
                 
                 # 读取站点配置
                 sites_config = {
-                    "BTHD": {
-                        "url": "bt_movie_base_url",
-                        "keyword": "高清影视",
-                        "use_login_url": True  # 标记使用登录URL
-                    },
-                    "HDTV": {
-                        "url": "bt_tv_base_url",
-                        "keyword": "高清剧集",
-                        "use_login_url": True  # 标记使用登录URL
-                    },
                     "BT0": {
                         "url": "bt0_base_url",
                         "keyword": "影视"
@@ -164,14 +154,6 @@ class SiteTester:
                         "url": "gy_base_url",
                         "keyword": "首页"
                     },
-                    "BTSJ6": {
-                        "url": "btsj6_base_url",
-                        "keyword": "BT世界网"
-                    },
-                    "SeedHub": {
-                        "url": "seedhub_base_url",
-                        "keyword": "电影"
-                    },                    
                     "1LOU": {
                         "url": "1lou_base_url",
                         "keyword": "Xiuno BBS"
@@ -188,11 +170,6 @@ class SiteTester:
                             "base_url": base_url,
                             "keyword": config["keyword"]
                         }
-                        
-                        # 对于BTHD和HDTV，添加登录URL
-                        if config.get("use_login_url", False):
-                            login_url = f"{base_url}/member.php?mod=logging&action=login"
-                            site_info["login_url"] = login_url
                         
                         self.sites[site_name] = site_info
                     else:
@@ -216,13 +193,8 @@ class SiteTester:
 
     def test_site(self, site_name, site_config):
         """测试单个站点"""
-        # 对于BTHD和HDTV使用登录URL，其他站点使用基础URL
-        if "login_url" in site_config:
-            url = site_config["login_url"]
-            url_type = "登录"
-        else:
-            url = site_config["base_url"]
-            url_type = "基础"
+        url = site_config["base_url"]
+        url_type = "基础"
         
         keyword = site_config["keyword"]
         
