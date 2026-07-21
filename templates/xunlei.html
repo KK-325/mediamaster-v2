@@ -9,18 +9,20 @@
                 {% if download_mgmt and download_mgmt.VALUE == 'True' %}
                     <iframe id="xunlei-iframe" width="100%" height="780px" frameborder="0"></iframe>
                     <script>
-                        // 从 Jinja2 获取设备名称（自动转义，安全）
-                        const deviceName = "{{ xunlei_device_name | e }}";
-                        let srcUrl;
-
-                        if (deviceName && deviceName.startsWith('极空间')) {
-                            srcUrl = 'https://pan.xunlei.com/yc/jkj/home/';
-                        } else {
-                            srcUrl = 'https://pan.xunlei.com/yc/home/';
-                        }
-
+                        // 从 Jinja2 获取厂商标识（自动转义，安全）
+                        const vendor = "{{ xunlei_vendor | e }}";
+                        const vendorUrlMap = {
+                            'ugreen': 'https://pan.xunlei.com/yc/ugreen/',
+                            'lenovo': 'https://pan.xunlei.com/yc/lenovo/',
+                            'unibox': 'https://pan.xunlei.com/yc/unibox/',
+                            'hik': 'https://pan.xunlei.com/yc/hik/',
+                            'lex': 'https://pan.xunlei.com/yc/lex/',
+                            'jkj': 'https://pan.xunlei.com/yc/jkj/',
+                            'huawei': 'https://pan.xunlei.com/yc/huawei/'
+                        };
+                        let srcUrl = vendorUrlMap[vendor] || 'https://pan.xunlei.com/yc/home/';
                         document.getElementById('xunlei-iframe').src = srcUrl;
-                        console.log('加载迅雷页面:', srcUrl, '设备名:', deviceName);
+                        console.log('加载迅雷页面:', srcUrl, '厂商:', vendor);
                     </script>
                 {% else %}
                     <p>下载管理功能未启用，请在系统设置中启用下载管理并配置下载器相关参数</p>

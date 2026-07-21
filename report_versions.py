@@ -45,9 +45,9 @@ def get_client_id():
 
 def send_client_data(client_id, version):
     """
-    发送用户统计数据到服务器
+    发送程序版本信息到服务器
     """
-    url = "http://status.songmy.top:5000/submit"
+    url = "http://47.109.61.68:5000/submit"
     payload = {
         "client_id": client_id,
         "version": version

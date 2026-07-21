@@ -164,11 +164,11 @@
                                             <input type="text" class="form-control" name="{{ key }}" id="{{ key }}" value="{{ field.value }}">
                                             {% if key == 'douban_user_ids' %}
                                             <div class="form-text text-danger">
-                                                <i class="bi bi-exclamation-triangle me-1"></i> 必填项：豆瓣账号ID，用于获取豆瓣想看数据并添加订阅，多个账号可以用,逗号分隔。<a target="_blank" href="http://wiki.songmy.top:8080/web/#/686311457/102215711">使用帮助</a>
+                                                <i class="bi bi-exclamation-triangle me-1"></i> 必填项：豆瓣账号ID，用于获取豆瓣想看数据并添加订阅，多个账号可以用,逗号分隔。<a target="_blank" href="/docs">使用帮助</a>
                                             </div>
                                             {% elif key == 'douban_rss_url' %}
                                             <div class="form-text text-danger">
-                                                <i class="bi bi-exclamation-triangle me-1"></i> 必填项：豆瓣想看地址，将your_douban_id替换为自己的ID。<a target="_blank" href="http://wiki.songmy.top:8080/web/#/686311457/102215711">使用帮助</a>
+                                                <i class="bi bi-exclamation-triangle me-1"></i> 必填项：豆瓣想看地址，将your_douban_id替换为自己的ID。<a target="_blank" href="/docs">使用帮助</a>
                                             </div>
                                             {% elif key == 'douban_cookie' %}
                                             <div class="form-text">
@@ -401,6 +401,12 @@
                                             <option value="qbittorrent" {% if field.value == 'qbittorrent' %}selected{% endif %}>qBittorrent</option>
                                             <option value="xunlei" {% if field.value == 'xunlei' %}selected{% endif %}>迅雷</option>
                                         </select>
+                                    {% elif field.type == 'select' %}
+                                        <select class="form-select" name="{{ key }}" id="{{ key }}">
+                                            {% for opt_value, opt_label in field.options.items() %}
+                                            <option value="{{ opt_value }}" {% if field.value == opt_value %}selected{% endif %}>{{ opt_label }}</option>
+                                            {% endfor %}
+                                        </select>
                                     {% elif field.type == 'text' %}
                                         <input type="text" class="form-control" name="{{ key }}" id="{{ key }}" value="{{ field.value }}">
                                     {% elif field.type == 'password' %}
@@ -414,7 +420,11 @@
                                     </div>
                                     {% elif key == 'xunlei_dir' %}
                                     <div class="form-text">
-                                        <i class="bi bi-info-circle me-1"></i> 迅雷远程下载需填写用户名、密码、设备名称、下载目录。<a target="_blank" href="http://wiki.songmy.top:8080/web/#/686311457/102215687">使用帮助</a>
+                                        <i class="bi bi-info-circle me-1"></i> 迅雷远程下载需填写用户名、密码、设备名称、下载目录。<a target="_blank" href="/docs">使用帮助</a>
+                                    </div>
+                                    {% elif key == 'xunlei_vendor' %}
+                                    <div class="form-text">
+                                        <i class="bi bi-info-circle me-1"></i> 请根据NAS迅雷版本选择对应的厂商信息。
                                     </div>
                                     {% endif %}
                                 </div>
@@ -501,11 +511,11 @@
                                             </div>
                                             {% elif key in ['movie_folder_naming_format', 'tv_folder_naming_format', 'anime_folder_naming_format', 'variety_folder_naming_format'] %}
                                             <div class="form-text">
-                                                <i class="bi bi-info-circle me-1"></i> 可用变量以及使用说明请查看：<a target="_blank" href="http://wiki.songmy.top:8080/web/#/686311457/102215728">使用帮助</a>
+                                                <i class="bi bi-info-circle me-1"></i> 可用变量以及使用说明请查看：<a target="_blank" href="/docs">使用帮助</a>
                                             </div>
                                             {% elif key in ['movie_naming_format', 'tv_naming_format', 'anime_naming_format', 'variety_naming_format'] %}
                                             <div class="form-text">
-                                                <i class="bi bi-info-circle me-1"></i> 可用变量以及使用说明请查看：<a target="_blank" href="http://wiki.songmy.top:8080/web/#/686311457/102215728">使用帮助</a>
+                                                <i class="bi bi-info-circle me-1"></i> 可用变量以及使用说明请查看：<a target="_blank" href="/docs">使用帮助</a>
                                             </div>
                                             {% elif key == 'file_overwrite_option' %}
                                             <div class="form-text">
@@ -992,22 +1002,25 @@
                 });
             }
 
-            // 只在选择迅雷时显示xunlei_device_name、xunlei_dir，隐藏download_host、download_port
+            // 只在选择迅雷时显示迅雷相关字段，隐藏download_host、download_port
             if (downloader === 'xunlei') {
                 $('#form-group-xunlei_device_name').show();
                 $('#form-group-xunlei_dir').show();
+                $('#form-group-xunlei_vendor').show();
                 $('#form-group-download_host').hide();
                 $('#form-group-download_port').hide();
                 $('#testDownloaderBtn').hide();
             } else if (downloader === 'transmission' || downloader === 'qbittorrent') {
                 $('#form-group-xunlei_device_name').hide();
                 $('#form-group-xunlei_dir').hide();
+                $('#form-group-xunlei_vendor').hide();
                 $('#form-group-download_host').show();
                 $('#form-group-download_port').show();
                 $('#testDownloaderBtn').show();
             } else {
                 $('#form-group-xunlei_device_name').hide();
                 $('#form-group-xunlei_dir').hide();
+                $('#form-group-xunlei_vendor').hide();
                 $('#form-group-download_host').show();
                 $('#form-group-download_port').show();
                 $('#testDownloaderBtn').show();

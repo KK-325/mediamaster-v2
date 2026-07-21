@@ -1190,14 +1190,14 @@ class MediaDownloader:
             try:
                 # 访问用户账户页面检查是否已登录
                 self.driver.get(self.gy_user_info_url)
-                # 检查是否存在账户设置相关的元素
+                # 检查是否存在账号设置相关的元素
                 WebDriverWait(self.driver, 5).until(
-                    EC.presence_of_element_located((By.XPATH, "//h2[contains(text(), '账户设置')]"))
+                    EC.presence_of_element_located((By.XPATH, "//h2[contains(text(), '账号设置')]"))
                 )
                 # 检查用户名输入框是否存在且被禁用（表明已登录）
                 username_input = self.driver.find_element(By.NAME, "username")
                 if username_input.get_attribute("disabled") == "true":
-                    logging.info("通过账户设置页面确认用户已登录")
+                    logging.info("通过账号设置页面确认用户已登录")
                     # 关闭可能存在的提示框
                     self.close_popup_if_exists()
                     return True
@@ -1307,9 +1307,9 @@ class MediaDownloader:
             # 等待页面跳转完成后去访问用户信息页面
             time.sleep(5)  # 等待页面跳转
             self.driver.get(user_info_url)
-            # 检查页面中是否存在<h2>账户设置</h2>元素
+            # 检查页面中是否存在<h2>账号设置</h2>元素
             WebDriverWait(self.driver, 10).until(
-                EC.presence_of_element_located((By.XPATH, "//h2[contains(text(), '账户设置')]"))
+                EC.presence_of_element_located((By.XPATH, "//h2[contains(text(), '账号设置')]"))
             )
             logging.info("观影站点登录成功！")
             # 关闭可能存在的提示框

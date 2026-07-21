@@ -45,11 +45,8 @@ class CaptchaHandler:
                 elif captcha_type == "cloudflare_checkbox":
                     self._handle_cloudflare_captcha("checkbox")
                 else:
-                    logging.info("未检测到验证码")
-                    if self._is_page_loaded():
-                        return
-                    else:
-                        raise Exception("页面加载失败且未检测到验证码")
+                    logging.info("未检测到验证码，跳过验证码处理")
+                    return
                 
                 # 验证页面是否成功跳转
                 if self._wait_for_page_redirect(url):

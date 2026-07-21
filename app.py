@@ -1927,7 +1927,8 @@ GROUP_MAPPING = {
         "download_host": {"type": "text", "label": "下载器地址"},
         "download_port": {"type": "text", "label": "下载器端口"},
         "xunlei_device_name": {"type": "text", "label": "迅雷设备名称"},
-        "xunlei_dir": {"type": "text", "label": "迅雷下载目录"}
+        "xunlei_dir": {"type": "text", "label": "迅雷下载目录"},
+        "xunlei_vendor": {"type": "select", "label": "定制厂商", "options": {"": "通用", "ugreen": "绿联", "lenovo": "联想", "unibox": "UniBOX", "hik": "海康威视", "lex": "雷克沙", "jkj": "极空间", "huawei": "华为"}}
     },
     "站点索引开关": {
         "bthd_enabled": {"type": "switch", "label": "高清影视之家"},
@@ -2204,6 +2205,10 @@ def download_mgmt_page():
     nickname = session.get('nickname')
     avatar_url = session.get('avatar_url')
 
+    # 读取迅雷厂商配置
+    xunlei_vendor_config = db.execute('SELECT VALUE FROM CONFIG WHERE OPTION = ?', ('xunlei_vendor',)).fetchone()
+    xunlei_vendor = xunlei_vendor_config['VALUE'] if xunlei_vendor_config else ''
+
     # 根据 download_type 使用不同模板
     if download_type == 'xunlei':
         template_name = 'xunlei.html'
@@ -2213,7 +2218,8 @@ def download_mgmt_page():
     # 将信息传递给模板
     return render_template(template_name, nickname=nickname, avatar_url=avatar_url, 
                          download_mgmt=download_mgmt_config, delete_with_files=delete_with_files,
-                         auto_delete_completed_tasks=auto_delete_completed_tasks, version=APP_VERSION)
+                         auto_delete_completed_tasks=auto_delete_completed_tasks, version=APP_VERSION,
+                         xunlei_vendor=xunlei_vendor)
 
 # 获取下载器客户端
 def get_downloader_client():

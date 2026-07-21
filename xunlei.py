@@ -145,13 +145,29 @@ class XunleiDownloader:
             logging.error(f"数据库加载配置错误: {e}")
             exit(0)
 
+    def _get_xunlei_url(self):
+        """根据数据库中配置的厂商返回对应的迅雷远程设备页面URL"""
+        vendor_urls = {
+            "ugreen": "https://pan.xunlei.com/yc/ugreen/",
+            "lenovo": "https://pan.xunlei.com/yc/lenovo/",
+            "unibox": "https://pan.xunlei.com/yc/unibox/",
+            "hik": "https://pan.xunlei.com/yc/hik/",
+            "lex": "https://pan.xunlei.com/yc/lex/",
+            "jkj": "https://pan.xunlei.com/yc/jkj/",
+            "huawei": "https://pan.xunlei.com/yc/huawei/",
+        }
+        vendor = self.config.get("xunlei_vendor", "").strip().lower()
+        url = vendor_urls.get(vendor, "https://pan.xunlei.com/yc/home/")
+        logging.info(f"迅雷厂商: '{vendor}', 目标URL: {url}")
+        return url
+
     def login_to_xunlei(self, username, password, max_retries=3):
         """
         打开 迅雷-远程设备 页面并执行迅雷登录。
         在找不到 iframe 或点击登录按钮失败时刷新页面并重试。
         """
         for attempt in range(1, max_retries + 1):
-            self.driver.get(f"https://pan.xunlei.com/yc/home/")
+            self.driver.get(self._get_xunlei_url())
             logging.info("成功加载 迅雷-远程设备 页面")
             time.sleep(5)
 
@@ -515,7 +531,7 @@ class XunleiDownloader:
                 if attempt == 0:
                     # 获取设备名并决定 URL
                     # 重新打开迅雷远程设备页面
-                    self.driver.get("https://pan.xunlei.com/yc/home/")
+                    self.driver.get(self._get_xunlei_url())
                     time.sleep(3)
                     
                     # 等待页面加载完成
