@@ -51,7 +51,13 @@ def subscribe_movies(cursor):
             continue
 
         # 对于"想看"和"在看"状态，执行原有订阅逻辑
-        if not cursor.execute('SELECT 1 FROM LIB_MOVIES WHERE title = ? AND year = ?', (title, year)).fetchone():
+        # 优先用 tmdb_id 匹配 LIB_MOVIES，无 tmdb_id 时回退到 title+year（与 update_subscriptions 保持一致）
+        # 修复：原代码仅用 title+year 匹配，豆瓣标题与媒体库标题不一致时会误插入 MISS 并发送假订阅通知
+        if tmdb_id:
+            lib_match = cursor.execute('SELECT 1 FROM LIB_MOVIES WHERE tmdb_id = ?', (tmdb_id,)).fetchone()
+        else:
+            lib_match = cursor.execute('SELECT 1 FROM LIB_MOVIES WHERE title = ? AND year = ?', (title, year)).fetchone()
+        if not lib_match:
             cursor.execute(
                 'INSERT OR IGNORE INTO MISS_MOVIES (title, year, douban_id, tmdb_id) VALUES (?, ?, ?, ?)',
                 (title, year, douban_id, tmdb_id)
@@ -110,8 +116,13 @@ def subscribe_tvs(cursor):
             (title, year, season)
         ).fetchone()
         
-        # 检查LIB_TVS中是否已存在（使用实际标题，不匹配年份）
-        lib_exists = cursor.execute('SELECT 1 FROM LIB_TVS WHERE title = ?', (actual_title,)).fetchone()
+        # 检查LIB_TVS中是否已存在
+        # 优先用 tmdb_id 匹配 LIB_TVS，无 tmdb_id 时回退到 title 匹配（与 update_subscriptions 保持一致）
+        # 修复：原代码仅用 actual_title 匹配，豆瓣标题与媒体库标题不一致时会误判为未入库
+        if tmdb_id:
+            lib_exists = cursor.execute('SELECT 1 FROM LIB_TVS WHERE tmdb_id = ?', (tmdb_id,)).fetchone()
+        else:
+            lib_exists = cursor.execute('SELECT 1 FROM LIB_TVS WHERE title = ?', (actual_title,)).fetchone()
         
         if not lib_exists:
             # 完全未入库的情况
