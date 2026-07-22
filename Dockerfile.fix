@@ -10,6 +10,12 @@ COPY sync.py /app/sync.py
 COPY indexer.py /app/indexer.py
 COPY site_test.py /app/site_test.py
 COPY database_manager.py /app/database_manager.py
+COPY subscr.py /app/subscr.py
+COPY tmdb_id.py /app/tmdb_id.py
+COPY scan_media.py /app/scan_media.py
+COPY auto_delete_tasks.py /app/auto_delete_tasks.py
+COPY download_task_adder.py /app/download_task_adder.py
+COPY main.py /app/main.py
 COPY templates/base.html /app/templates/base.html
 COPY templates/dashboard.html /app/templates/dashboard.html
 COPY templates/settings.html /app/templates/settings.html

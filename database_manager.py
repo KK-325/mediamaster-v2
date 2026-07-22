@@ -135,7 +135,7 @@ def create_tables():
             EPISODE INTEGER,
             URL TEXT,
             STATUS TEXT DEFAULT '想看',
-            UNIQUE(TITLE, YEAR)
+            UNIQUE(TITLE, YEAR, SEASON)
         )
     ''')
 
@@ -173,6 +173,47 @@ def create_tables():
             UNIQUE(ALIAS)
         )
     ''')
+
+    # 迁移 RSS_TVS 表的唯一性约束：从 UNIQUE(TITLE, YEAR) 迁移到 UNIQUE(TITLE, YEAR, SEASON)
+    # 因为 CREATE TABLE IF NOT EXISTS 对已存在的表不生效，需要手动迁移
+    try:
+        cursor.execute("SELECT sql FROM sqlite_master WHERE type='table' AND name='RSS_TVS'")
+        table_sql = cursor.fetchone()
+        if table_sql and 'UNIQUE(TITLE, YEAR, SEASON)' not in table_sql[0]:
+            logging.info("正在迁移 RSS_TVS 表的唯一性约束为 UNIQUE(TITLE, YEAR, SEASON)...")
+
+            # 1. 重命名原表
+            cursor.execute("ALTER TABLE RSS_TVS RENAME TO RSS_TVS_old")
+
+            # 2. 用新约束创建 RSS_TVS 表
+            cursor.execute('''
+                CREATE TABLE RSS_TVS (
+                    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+                    TITLE TEXT NOT NULL,
+                    DOUBAN_ID INTEGER,
+                    YEAR INTEGER,
+                    SUB_TITLE TEXT,
+                    SEASON INTEGER,
+                    EPISODE INTEGER,
+                    URL TEXT,
+                    STATUS TEXT DEFAULT '想看',
+                    UNIQUE(TITLE, YEAR, SEASON)
+                )
+            ''')
+
+            # 3. 迁移数据
+            cursor.execute('''
+                INSERT INTO RSS_TVS (ID, TITLE, DOUBAN_ID, YEAR, SUB_TITLE, SEASON, EPISODE, URL, STATUS)
+                SELECT ID, TITLE, DOUBAN_ID, YEAR, SUB_TITLE, SEASON, EPISODE, URL, STATUS
+                FROM RSS_TVS_old
+            ''')
+
+            # 4. 删除旧表
+            cursor.execute("DROP TABLE RSS_TVS_old")
+
+            logging.info("RSS_TVS 表唯一性约束迁移完成")
+    except Exception as e:
+        logging.error(f"迁移 RSS_TVS 表唯一性约束时出错: {e}")
 
     # 插入默认用户数据
     cursor.execute("SELECT COUNT(*) FROM USERS WHERE USERNAME = 'admin'")

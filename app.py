@@ -1223,8 +1223,8 @@ def run_full_workflow():
         workflow_steps = [
             ('scan_media', '扫描媒体库'),
             ('subscr', '刷新豆瓣兴趣'),
-            ('check_subscr', '刷新正在订阅'),
             ('tmdb_id', '刷新TMDB ID'),
+            ('check_subscr', '刷新正在订阅'),
             ('indexer', '更新站点索引'),
             ('downloader', '订阅检索下载'),
             ('dateadded', '更新添加日期'),

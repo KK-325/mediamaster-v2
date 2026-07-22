@@ -262,6 +262,12 @@ def main():
         logging.info("-" * 80)
         time.sleep(5)
 
+        run_script('tmdb_id.py')
+        logging.info("-" * 80)
+        logging.info("更新数据库TMDB_ID：已执行完毕，等待5秒...")
+        logging.info("-" * 80)
+        time.sleep(5)
+
         run_script('check_subscr.py')
         logging.info("-" * 80)
         logging.info("检查是否有新增订阅：已执行完毕，等待5秒...")
@@ -283,12 +289,6 @@ def main():
         if not xunlei_started:
             start_xunlei_torrent()
             xunlei_started = True
-
-        run_script('tmdb_id.py')
-        logging.info("-" * 80)
-        logging.info("更新数据库TMDB_ID：已执行完毕，等待5秒...")
-        logging.info("-" * 80)
-        time.sleep(5)
 
         run_script('dateadded.py')
         logging.info("-" * 80)
