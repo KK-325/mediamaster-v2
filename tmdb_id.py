@@ -1,5 +1,7 @@
 import os
 import re
+import time
+import random
 import sqlite3
 import xml.etree.ElementTree as ET
 import logging
@@ -167,6 +169,43 @@ def fetch_data_without_tmdb_id(db_path, table):
     logging.debug(f"获取到 {len(rows)} 条没有tmdb_id的数据")
     return rows
 
+def fill_rss_tmdb_id(db_path, config):
+    """为 RSS_MOVIES / RSS_TVS 表中 tmdb_id 为空的记录通过 TMDB API 补全
+
+    RSS 表记录来自豆瓣 RSS,没有对应 NFO 文件,因此只通过 TMDB API 查询。
+    补全后 check_subscr.py / downloader.py 可用 tmdb_id 跨表匹配 LIB 表,
+    避免中英文标题不一致导致误判未入库。
+    """
+    # RSS_MOVIES: 电影
+    rss_movies = fetch_data_without_tmdb_id(db_path, 'RSS_MOVIES')
+    if rss_movies:
+        for title, year in rss_movies:
+            if not year:
+                logging.info(f"跳过年份为空的 RSS 电影记录: {title}")
+                continue
+            logging.info(f"补全 RSS 电影 tmdb_id: {title} ({year})")
+            tmdb_id = query_tmdb_api(title, year, 'movie', config)
+            if tmdb_id:
+                update_database(db_path, 'RSS_MOVIES', title, year, tmdb_id)
+            time.sleep(random.uniform(1, 3))
+    else:
+        logging.info("没有需要补全 tmdb_id 的 RSS 电影记录")
+
+    # RSS_TVS: 电视剧
+    rss_tvs = fetch_data_without_tmdb_id(db_path, 'RSS_TVS')
+    if rss_tvs:
+        for title, year in rss_tvs:
+            if not year:
+                logging.info(f"跳过年份为空的 RSS 电视剧记录: {title}")
+                continue
+            logging.info(f"补全 RSS 电视剧 tmdb_id: {title} ({year})")
+            tmdb_id = query_tmdb_api(title, year, 'tv', config)
+            if tmdb_id:
+                update_database(db_path, 'RSS_TVS', title, year, tmdb_id)
+            time.sleep(random.uniform(1, 3))
+    else:
+        logging.info("没有需要补全 tmdb_id 的 RSS 电视剧记录")
+
 def main():
     # 从配置文件中读取路径信息
     db_path = '/config/data.db'
@@ -215,6 +254,10 @@ def main():
             update_database(db_path, 'LIB_TVS', title, year, tmdb_id)
     else:
         logging.info("没有需要处理的电视剧记录")
+
+    # 补全 RSS_MOVIES / RSS_TVS 表中缺失的 tmdb_id
+    # 这样 check_subscr.py 可用 tmdb_id 跨表匹配 LIB 表,避免标题不一致导致误判
+    fill_rss_tmdb_id(db_path, config)
 
 if __name__ == "__main__":
     main()
