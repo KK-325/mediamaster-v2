@@ -554,8 +554,9 @@ def main():
     # 插入或更新电视剧数据
     if all_episodes:
         insert_or_update_episodes(db_path, all_episodes)
-        # 删除数据库中多余的电视剧记录
-        delete_obsolete_episodes(db_path, all_episodes)
+    # 始终清理数据库中多余的电视剧记录（即使扫描结果为空也要清掉幽灵记录）
+    # 修复：原代码用 if all_episodes 包裹 delete_obsolete_episodes，导致目录为空时跳过清理
+    delete_obsolete_episodes(db_path, all_episodes)
     
     # 更新电视剧年份信息（对所有目录进行操作）
     if os.path.exists(episodes_path):

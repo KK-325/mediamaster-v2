@@ -1723,13 +1723,30 @@ def get_alias_mapping(db_path, alias_name):
 
 def refresh_media_library():
     # 刷新媒体库
-    subprocess.run(['python', 'scan_media.py'])  
+    subprocess.run(['python', 'scan_media.py'])
     # 刷新正在订阅
-    subprocess.run(['python', 'check_subscr.py'])   
+    subprocess.run(['python', 'check_subscr.py'])
     # 刮削NFO元数据
     subprocess.run(['python', 'scrape_metadata.py'])
     # 刷新媒体库tmdb_id
     subprocess.run(['python', 'tmdb_id.py'])
+
+# 批量转移优化：模块级标志位，标记本批次是否有文件实际转移成功
+# process_file 成功转移时置 True，由批量入口在批次结束后统一调用一次 refresh_media_library
+_transfer_happened = False
+
+def mark_transfer_happened():
+    """标记本次批次中有文件转移成功，需要在批次结束后刷新媒体库"""
+    global _transfer_happened
+    _transfer_happened = True
+
+def flush_media_library_if_needed():
+    """批量处理结束后统一刷新一次媒体库（替代原来每次转移都刷新）"""
+    global _transfer_happened
+    if _transfer_happened:
+        logging.info("批量处理完成，统一刷新媒体库")
+        refresh_media_library()
+        _transfer_happened = False
 
 def process_file(file_path, processed_filenames):
     """
@@ -2045,8 +2062,9 @@ def process_file(file_path, processed_filenames):
                         logging.info(f"转移NFO文件: {nfo_file_path} -> {nfo_target_path}")
 
                     send_notification(new_filename)
-                    logging.info(f"文件处理完成，刷新本地数据库")
-                    refresh_media_library()
+                    logging.info(f"文件处理完成，标记批量刷新媒体库")
+                    # 批量转移优化：不再每次转移都立即刷新，改为标记后由批量入口统一刷新
+                    mark_transfer_happened()
 
                     # 通知 tinyMediaManager
                     notify_tmm(classification)
@@ -2226,6 +2244,9 @@ def process_files_in_batch(file_paths, processed_filenames):
             logging.info(f"目录 {directory} 中只有 1 个文件，单独处理")
             for file_path in files:
                 process_file(file_path, processed_filenames)
+
+    # 批量转移优化：所有目录处理完毕后，统一刷新一次媒体库（而非每个文件转移后都刷新）
+    flush_media_library_if_needed()
 
 def are_similar_media_files(file_paths):
     """
@@ -2616,6 +2637,8 @@ def start_monitoring(directory):
             elif len(video_files) == 1:
                 # 单个文件单独处理
                 process_file(video_files[0], event_handler.processed_files)
+                # 批量转移优化：单文件处理完成后统一刷新一次媒体库
+                flush_media_library_if_needed()
                 
         while True:
             time.sleep(1)
