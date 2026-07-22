@@ -1,6 +1,7 @@
 import requests
 import xml.etree.ElementTree as ET
 from urllib.parse import urlparse, parse_qs
+from bs4 import BeautifulSoup
 import time
 import random
 import sqlite3
@@ -446,6 +447,110 @@ class DouBanRSSParser:
         else:
             logging.error("未能获取豆瓣兴趣数据")
 
+    def fetch_wishlist_douban_ids(self, user_id):
+        """拉取豆瓣用户"想看"列表,返回所有条目的 douban_id 集合
+
+        豆瓣"想看"列表 URL: https://movie.douban.com/people/{user_id}/wish
+        每页 15 条,通过 ?start=N 翻页
+        条目链接格式: /subject/123456/ 或 https://movie.douban.com/subject/123456/
+        """
+        wish_url_base = f"https://movie.douban.com/people/{user_id}/wish"
+        all_wish_ids = set()
+        start = 0
+        max_pages = 20  # 安全上限,避免无限翻页
+
+        for page in range(max_pages):
+            url = f"{wish_url_base}?start={start}&sort=time"
+            try:
+                response = requests.get(url, headers=self.pcheaders, timeout=10)
+                if response.status_code != 200:
+                    logging.warning(f"获取豆瓣想看列表失败(user={user_id}, start={start}), 状态码: {response.status_code}")
+                    break
+
+                soup = BeautifulSoup(response.text, "html.parser")
+                # 条目链接格式: <a href="https://movie.douban.com/subject/123456/" ...>
+                item_links = soup.select('a.nbg[href*="/subject/"]')
+                if not item_links:
+                    # 没有更多条目
+                    break
+
+                page_ids = set()
+                for link in item_links:
+                    href = link.get('href', '')
+                    # 提取 douban_id
+                    match = re.search(r'/subject/(\d+)', href)
+                    if match:
+                        page_ids.add(int(match.group(1)))
+
+                if not page_ids:
+                    break
+
+                all_wish_ids.update(page_ids)
+                logging.info(f"豆瓣想看列表第 {page + 1} 页: 获取 {len(page_ids)} 个条目,累计 {len(all_wish_ids)}")
+
+                # 下一页
+                start += 15
+                # 避免频繁请求
+                time.sleep(random.uniform(1, 2))
+            except requests.RequestException as e:
+                logging.error(f"请求豆瓣想看列表出错(user={user_id}, start={start}): {e}")
+                break
+
+        logging.info(f"豆瓣用户 {user_id} 想看列表共 {len(all_wish_ids)} 个条目")
+        return all_wish_ids
+
+    def sync_wishlist_status(self):
+        """同步豆瓣"想看"列表,清理已被取消的想看记录
+
+        豆瓣 RSS feed 是活动流,不反映取消操作。
+        本方法主动拉取"想看"列表页面作为权威数据源:
+        - RSS 表中 status='想看' 但不在想看列表的 → 删除
+        - 同时清理对应的 MISS 表记录(避免残留订阅)
+        """
+        user_ids = [uid.strip() for uid in self.douban_user_ids.split(',') if uid.strip() and uid.strip() != "your_douban_id"]
+        if not user_ids:
+            logging.warning("未配置豆瓣用户ID,跳过想看列表同步")
+            return
+
+        # 拉取所有用户的想看列表
+        actual_wish_ids = set()
+        for user_id in user_ids:
+            ids = self.fetch_wishlist_douban_ids(user_id)
+            actual_wish_ids.update(ids)
+
+        if not actual_wish_ids:
+            logging.warning("未能获取到任何豆瓣想看列表数据,跳过清理")
+            return
+
+        cursor = self.db_connection.cursor()
+
+        # 清理 RSS_MOVIES 中 status='想看' 但不在实际想看列表的记录
+        cursor.execute("SELECT douban_id, title FROM RSS_MOVIES WHERE status = '想看'")
+        wish_movies = cursor.fetchall()
+        removed_movies = 0
+        for douban_id, title in wish_movies:
+            if douban_id not in actual_wish_ids:
+                cursor.execute("DELETE FROM RSS_MOVIES WHERE douban_id = ?", (douban_id,))
+                # 同时清理 MISS_MOVIES
+                cursor.execute("DELETE FROM MISS_MOVIES WHERE douban_id = ?", (douban_id,))
+                removed_movies += 1
+                logging.info(f"电影 '{title}' (豆瓣ID:{douban_id}) 已在豆瓣取消想看,从订阅中移除")
+
+        # 清理 RSS_TVS 中 status='想看' 但不在实际想看列表的记录
+        cursor.execute("SELECT douban_id, title FROM RSS_TVS WHERE status = '想看'")
+        wish_tvs = cursor.fetchall()
+        removed_tvs = 0
+        for douban_id, title in wish_tvs:
+            if douban_id not in actual_wish_ids:
+                cursor.execute("DELETE FROM RSS_TVS WHERE douban_id = ?", (douban_id,))
+                # 同时清理 MISS_TVS
+                cursor.execute("DELETE FROM MISS_TVS WHERE douban_id = ?", (douban_id,))
+                removed_tvs += 1
+                logging.info(f"电视剧 '{title}' (豆瓣ID:{douban_id}) 已在豆瓣取消想看,从订阅中移除")
+
+        self.db_connection.commit()
+        logging.info(f"想看列表同步完成: 移除 {removed_movies} 部电影, {removed_tvs} 部电视剧")
+
     def close_db(self):
         self.db_connection.close()
         logging.info("关闭数据库连接")
@@ -455,4 +560,6 @@ if __name__ == "__main__":
     parser = DouBanRSSParser()
     parser.run()
     parser.check_and_update_media_info()
+    # 同步豆瓣"想看"列表,清理已被取消的想看记录
+    parser.sync_wishlist_status()
     parser.close_db()
