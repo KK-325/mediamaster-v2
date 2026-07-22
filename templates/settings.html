@@ -407,8 +407,6 @@
                                     
                                     {% if field.type == 'downloader' %}
                                         <select class="form-select" name="{{ key }}" id="{{ key }}">
-                                            <option value="transmission" {% if field.value == 'transmission' %}selected{% endif %}>Transmission</option>
-                                            <option value="qbittorrent" {% if field.value == 'qbittorrent' %}selected{% endif %}>qBittorrent</option>
                                             <option value="xunlei" {% if field.value == 'xunlei' %}selected{% endif %}>迅雷</option>
                                         </select>
                                     {% elif field.type == 'select' %}
@@ -426,7 +424,7 @@
                                     
                                     {% if key == 'download_port' %}
                                     <div class="form-text">
-                                        <i class="bi bi-info-circle me-1"></i> 使用transmission和qbittorrent需要填写IP地址和端口。不使用则保持默认。
+                                        <i class="bi bi-info-circle me-1"></i> 当前仅支持迅雷下载器，下载器地址和端口无需填写。
                                     </div>
                                     {% elif key == 'xunlei_dir' %}
                                     <div class="form-text">
@@ -1016,29 +1014,13 @@
                 });
             }
 
-            // 只在选择迅雷时显示迅雷相关字段，隐藏download_host、download_port
-            if (downloader === 'xunlei') {
-                $('#form-group-xunlei_device_name').show();
-                $('#form-group-xunlei_dir').show();
-                $('#form-group-xunlei_vendor').show();
-                $('#form-group-download_host').hide();
-                $('#form-group-download_port').hide();
-                $('#testDownloaderBtn').hide();
-            } else if (downloader === 'transmission' || downloader === 'qbittorrent') {
-                $('#form-group-xunlei_device_name').hide();
-                $('#form-group-xunlei_dir').hide();
-                $('#form-group-xunlei_vendor').hide();
-                $('#form-group-download_host').show();
-                $('#form-group-download_port').show();
-                $('#testDownloaderBtn').show();
-            } else {
-                $('#form-group-xunlei_device_name').hide();
-                $('#form-group-xunlei_dir').hide();
-                $('#form-group-xunlei_vendor').hide();
-                $('#form-group-download_host').show();
-                $('#form-group-download_port').show();
-                $('#testDownloaderBtn').show();
-            }
+            // 仅支持迅雷下载器：显示迅雷相关字段，隐藏download_host、download_port
+            $('#form-group-xunlei_device_name').show();
+            $('#form-group-xunlei_dir').show();
+            $('#form-group-xunlei_vendor').show();
+            $('#form-group-download_host').hide();
+            $('#form-group-download_port').hide();
+            $('#testDownloaderBtn').hide();
         }
 
         // 媒体元数据刮削开关控制显示/隐藏
@@ -1191,49 +1173,9 @@
             });
         });
 
-        // 测试下载器连接功能
+        // 测试下载器连接功能（当前仅支持迅雷，按钮已隐藏）
         $('#testDownloaderBtn').on('click', function() {
-            var downloader = $('#download_type').val();
-            var host = $('#download_host').val();
-            var port = $('#download_port').val();
-            var username = $('#download_username').val();
-            var password = $('#download_password').val();
-            
-            if (downloader !== 'transmission' && downloader !== 'qbittorrent') {
-                $('#testResult').html('<span class="text-warning"><i class="bi bi-exclamation-triangle"></i> 仅支持测试Transmission和qBittorrent</span>');
-                return;
-            }
-            
-            if (!host || !port) {
-                $('#testResult').html('<span class="text-danger"><i class="bi bi-exclamation-circle"></i> 请填写下载器地址和端口</span>');
-                return;
-            }
-            
-            $('#testResult').html('<span class="text-info"><i class="bi bi-arrow-repeat"></i> 测试中...</span>');
-            
-            // 发送测试请求到后端
-            $.ajax({
-                url: '/test_downloader_connection',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    downloader: downloader,
-                    host: host,
-                    port: port,
-                    username: username,
-                    password: password
-                }),
-                success: function(response) {
-                    if (response.success) {
-                        $('#testResult').html('<span class="text-success"><i class="bi bi-check-circle"></i> 连接成功！</span>');
-                    } else {
-                        $('#testResult').html('<span class="text-danger"><i class="bi bi-x-circle"></i> 连接失败：' + response.message + '</span>');
-                    }
-                },
-                error: function(xhr, status, error) {
-                    $('#testResult').html('<span class="text-danger"><i class="bi bi-x-circle"></i> 测试请求失败：' + error + '</span>');
-                }
-            });
+            $('#testResult').html('<span class="text-warning"><i class="bi bi-exclamation-triangle"></i> 当前仅支持迅雷下载器，无需测试连接</span>');
         });
     });
 

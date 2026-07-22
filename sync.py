@@ -20,15 +20,7 @@ try:
 except ImportError:
     guessit = None
 
-# 新增：导入下载器API
-try:
-    from transmission_rpc import Client as TransmissionClient
-except ImportError:
-    TransmissionClient = None
-try:
-    from qbittorrentapi import Client as QBittorrentClient
-except ImportError:
-    QBittorrentClient = None
+# 新增：导入下载器API（仅保留迅雷，无需第三方下载器SDK）
 
 # 定义常量
 FILES_RECORD_PATH = '/config/files_record.txt'
@@ -252,68 +244,9 @@ def generate_folder_name(media_info, media_type, classification):
 def get_task_label_from_downloader(folder_name, config):
     """
     根据文件夹名称查找下载器任务名称相同的任务，并返回标签（如有）。
-    支持 Transmission 和 qBittorrent，xunlei 跳过。
+    仅支持迅雷，迅雷无需查找任务和标签，直接返回 None。
     """
-    download_mgmt = config.get('download_mgmt', 'False').lower() == 'true'
-    download_type = config.get('download_type', 'transmission').lower()
-    download_host = config.get('download_host', '127.0.0.1')
-    download_port = int(config.get('download_port', 9091))
-    download_username = config.get('download_username', '')
-    download_password = config.get('download_password', '')
-
-    logging.debug(f"尝试获取下载任务标签: folder_name={folder_name}, download_mgmt={download_mgmt}, download_type={download_type}")
-
-    # 新增：迅雷无需查找任务和标签
-    if not download_mgmt or download_type == 'xunlei':
-        logging.info("下载管理未启用或为迅雷，跳过标签查找。")
-        return None
-
-    try:
-        if download_type == 'transmission' and TransmissionClient:
-            logging.debug("使用 TransmissionClient 连接下载器...")
-            client = TransmissionClient(
-                host=download_host,
-                port=download_port,
-                username=download_username,
-                password=download_password
-            )
-            for t in client.get_torrents(arguments=['name', 'labels', 'label']):
-                try:
-                    # 直接用任务名和文件夹名比对
-                    if t.name == folder_name:
-                        logging.info(f"找到匹配的 Transmission 任务: {t.name}")
-                        if hasattr(t, 'labels') and t.labels:
-                            logging.info(f"Transmission 任务标签（labels）: {t.labels[0]}")
-                            return t.labels[0]
-                        elif hasattr(t, 'label') and t.label:
-                            logging.info(f"Transmission 任务标签（label）: {t.label}")
-                            return t.label
-                        else:
-                            logging.info("Transmission 任务未设置标签")
-                            return None
-                except Exception as ex:
-                    logging.warning(f"获取 Transmission 任务异常: {ex}")
-                    continue
-        elif download_type == 'qbittorrent' and QBittorrentClient:
-            logging.debug("使用 QBittorrentClient 连接下载器...")
-            client = QBittorrentClient(
-                host=f"http://{download_host}:{download_port}",
-                username=download_username,
-                password=download_password
-            )
-            client.auth_log_in()
-            for t in client.torrents_info():
-                try:
-                    # 直接用任务名和文件夹名比对
-                    if t.get('name', '') == folder_name:
-                        tags = t.get('tags', '')
-                        logging.info(f"找到匹配的 qBittorrent 任务: {t.get('name', '')}，标签: {tags}")
-                        return tags.split(',')[0] if tags else None
-                except Exception as ex:
-                    logging.warning(f"qBittorrent 任务解析异常: {ex}")
-                    continue
-    except Exception as e:
-        logging.error(f"获取下载任务标签失败: {e}")
+    logging.info("当前仅支持迅雷下载器，跳过标签查找。")
     return None
 
 def extract_info_from_label(label):

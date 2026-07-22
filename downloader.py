@@ -25,9 +25,6 @@ import html as _html
 import re
 import base64
 
-from transmission_rpc import Client as TransmissionClient
-from qbittorrentapi import Client as QBittorrentClient, LoginFailed
-
 # 配置日志
 os.makedirs("/tmp/log", exist_ok=True)
 logging.basicConfig(
@@ -248,99 +245,48 @@ class MediaDownloader:
         except Exception as e:
             logging.error(f"发送通知失败: {e}")
     def add_magnet_task(self, magnet_link: str, title_text: str) -> bool:
-        """将磁力链接直接添加到下载器（Transmission / qBittorrent）。"""
+        """将磁力链接直接添加到迅雷下载器。"""
         try:
             if not magnet_link or not str(magnet_link).startswith("magnet:"):
                 logging.error("无效磁力链接，无法添加任务")
                 return False
 
             download_mgmt = self.config.get('download_mgmt', 'False').lower() == 'true'
-            download_type = (self.config.get('download_type', 'transmission') or 'transmission').lower()
-            download_host = self.config.get('download_host', '127.0.0.1')
-            download_port = int(self.config.get('download_port', 9091))
-            download_username = self.config.get('download_username', '')
-            download_password = self.config.get('download_password', '')
-
             if not download_mgmt:
                 logging.error("下载管理功能未启用，跳过添加磁力任务")
                 return False
 
             label = title_text or "mediamaster"
 
-            if download_type == 'transmission':
-                client = TransmissionClient(
-                    host=download_host,
-                    port=download_port,
-                    username=download_username,
-                    password=download_password,
-                )
-                result = client.add_torrent(magnet_link)
-                torrent_id = getattr(result, 'id', None)
-                if torrent_id is None:
-                    try:
-                        torrent_id = result.get('id')
-                    except Exception:
-                        torrent_id = None
-                if torrent_id is not None:
-                    try:
-                        client.change_torrent(torrent_id, labels=[label])
-                    except Exception:
-                        pass
-                    try:
-                        client.change_torrent(torrent_id, group="mediamaster")
-                    except Exception:
-                        pass
-                logging.info(f"已添加磁力任务到 Transmission: {label}")
-                return True
+            # 仅支持迅雷下载器
+            try:
+                from xunlei import XunleiDownloader
+            except Exception as e:
+                logging.error(f"导入迅雷下载器失败: {e}")
+                return False
 
-            if download_type == 'qbittorrent':
-                client = QBittorrentClient(
-                    host=f"http://{download_host}:{download_port}",
-                    username=download_username,
-                    password=download_password,
-                )
-                try:
-                    client.auth_log_in()
-                except LoginFailed as e:
-                    logging.error(f"qBittorrent 登录失败: {e}")
-                    return False
-                client.torrents_add(urls=magnet_link, tags=label, category="mediamaster")
-                logging.info(f"已添加磁力任务到 qBittorrent: {label}")
-                return True
+            x = XunleiDownloader(db_path=self.db_path)
+            x.load_config()
+            x.setup_webdriver()
 
-            if download_type == 'xunlei':
-                # 复用项目内的迅雷远程添加逻辑（Selenium）。
-                try:
-                    from xunlei import XunleiDownloader
-                except Exception as e:
-                    logging.error(f"导入迅雷下载器失败: {e}")
-                    return False
-
-                x = XunleiDownloader(db_path=self.db_path)
-                x.load_config()
-                x.setup_webdriver()
-
-                username = self.config.get('download_username', '')
-                password = self.config.get('download_password', '')
-                if not x.login_to_xunlei(username, password):
-                    logging.error("登录迅雷失败")
-                    x.close_driver()
-                    return False
-
-                xunlei_device_name = self.config.get('xunlei_device_name')
-                if xunlei_device_name and not x.check_device(xunlei_device_name):
-                    logging.error("迅雷设备切换失败")
-                    x.close_driver()
-                    return False
-
-                ok = x._add_magnet_link(magnet_link, original_file_name=None)
+            username = self.config.get('download_username', '')
+            password = self.config.get('download_password', '')
+            if not x.login_to_xunlei(username, password):
+                logging.error("登录迅雷失败")
                 x.close_driver()
-                if ok:
-                    logging.info(f"已添加磁力任务到 迅雷: {label}")
-                return bool(ok)
+                return False
 
-            logging.error(f"当前下载器类型 {download_type} 不支持直接添加磁力链接")
-            return False
+            xunlei_device_name = self.config.get('xunlei_device_name')
+            if xunlei_device_name and not x.check_device(xunlei_device_name):
+                logging.error("迅雷设备切换失败")
+                x.close_driver()
+                return False
+
+            ok = x._add_magnet_link(magnet_link, original_file_name=None)
+            x.close_driver()
+            if ok:
+                logging.info(f"已添加磁力任务到迅雷: {label}")
+            return bool(ok)
 
         except Exception as e:
             logging.error(f"添加磁力任务失败: {e}")

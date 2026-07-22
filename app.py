@@ -12,8 +12,6 @@ from datetime import timedelta
 from werkzeug.middleware.proxy_fix import ProxyFix
 from werkzeug.utils import secure_filename
 from flask import stream_with_context
-from transmission_rpc import Client as TransmissionClient
-from qbittorrentapi import Client as QbittorrentClient
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from flask import Response, stream_with_context
 import json
@@ -415,17 +413,9 @@ def system_resources():
     # 获取下载器客户端
     try:
         client = get_downloader_client()
-        if isinstance(client, TransmissionClient):
-            torrents = client.get_torrents()
-            net_io_recv_per_sec = sum(t.rate_download for t in torrents) / 1024  # 转换为 KB/s
-            net_io_sent_per_sec = sum(t.rate_upload for t in torrents) / 1024    # 转换为 KB/s
-        elif isinstance(client, QbittorrentClient):
-            torrents = client.torrents_info()
-            net_io_recv_per_sec = sum(t.dlspeed for t in torrents) / 1024  # 转换为 KB/s
-            net_io_sent_per_sec = sum(t.upspeed for t in torrents) / 1024    # 转换为 KB/s
-        else:
-            net_io_sent_per_sec = 0
-            net_io_recv_per_sec = 0
+        # 仅支持迅雷下载器，迅雷无法直接获取实时下载速度
+        net_io_sent_per_sec = 0
+        net_io_recv_per_sec = 0
     except Exception as e:
         logger.error(f"获取下载器信息失败: {e}")
         net_io_sent_per_sec = 0
@@ -1285,7 +1275,7 @@ GROUP_MAPPING = {
     },
     "下载器管理": {
         "download_mgmt": {"type": "switch", "label": "下载器管理"},
-        "download_type": {"type": "downloader", "label": "下载器", "options": ["transmission", "qbittorrent", "xunlei"]},
+        "download_type": {"type": "downloader", "label": "下载器", "options": ["xunlei"]},
         "download_username": {"type": "text", "label": "下载器用户名"},
         "download_password": {"type": "password", "label": "下载器密码"},
         "download_host": {"type": "text", "label": "下载器地址"},
@@ -1579,215 +1569,28 @@ def download_mgmt_page():
 
 # 获取下载器客户端
 def get_downloader_client():
-    db = get_db()
-    config_rows = db.execute('''
-        SELECT OPTION, VALUE FROM CONFIG 
-        WHERE OPTION IN (?, ?, ?, ?, ?)
-    ''', ('download_type', 'download_host', 'download_port', 'download_username', 'download_password')).fetchall()
-
-    config = {row['OPTION']: row['VALUE'] for row in config_rows}
-
-    download_type = config.get('download_type')
-    
-    # 如果下载器类型是xunlei，直接返回None
-    if download_type == 'xunlei':
-        return None
-
-    # 检查下载器类型是否存在
-    if not download_type:
-        raise ValueError("未配置下载器类型，请在系统设置中配置下载器。")
-
-    host = config.get('download_host')
-    port = config.get('download_port')
-    username = config.get('download_username')
-    password = config.get('download_password')
-
-    # 根据不同下载器类型检查必需的配置项
-    if download_type == 'transmission':
-        # transmission只需要host和port是必填的
-        if not host:
-            raise ValueError("Transmission配置不完整：缺少主机地址")
-        if not port:
-            raise ValueError("Transmission配置不完整：缺少端口号")
-        
-        # 尝试转换端口为整数
-        try:
-            port = int(port)
-        except (ValueError, TypeError):
-            raise ValueError("Transmission配置错误：端口号必须是数字")
-        
-        return TransmissionClient(
-            host=host,
-            port=port,
-            username=username if username else None,
-            password=password if password else None
-        )
-    elif download_type == 'qbittorrent':
-        # qbittorrent需要所有配置项都是必填的
-        if not host:
-            raise ValueError("qBittorrent配置不完整：缺少主机地址")
-        if not port:
-            raise ValueError("qBittorrent配置不完整：缺少端口号")
-        if not username:
-            raise ValueError("qBittorrent配置不完整：缺少用户名")
-        if not password:
-            raise ValueError("qBittorrent配置不完整：缺少密码")
-            
-        # 尝试转换端口为整数
-        try:
-            port = int(port)
-        except (ValueError, TypeError):
-            raise ValueError("qBittorrent配置错误：端口号必须是数字")
-        
-        return QbittorrentClient(
-            host=f"http://{host}:{port}",
-            username=username,
-            password=password
-        )
-    else:
-        raise ValueError(f"不支持的下载器类型: {download_type}")
+    # 仅支持迅雷下载器，迅雷通过 Selenium 远程管理，无需返回客户端实例
+    return None
 
 # 获取任务列表
 @app.route('/api/download/list', methods=['GET'])
 @login_required
 def list_torrents():
-    try:
-        client = get_downloader_client()
-
-        if isinstance(client, TransmissionClient):
-            torrents = client.get_torrents()
-            result = [{
-                "id": t.id,
-                "name": t.name,
-                "percentDone": t.percent_done,
-                "status": t.status,
-                "rateDownload": t.rate_download,
-                "rateUpload": t.rate_upload,
-                "magnetLink": t.magnet_link
-            } for t in torrents]
-        else:  # qBittorrent
-            torrents = client.torrents_info()
-            result = [{
-                "id": t.hash,
-                "name": t.name,
-                "percentDone": t.progress,
-                "status": t.state_enum.name.lower(),
-                "rateDownload": t.dlspeed,
-                "rateUpload": t.upspeed,
-                "magnetLink": t.magnet_uri
-            } for t in torrents]
-
-        return jsonify({"torrents": result})
-    except Exception as e:
-        logger.error(f"获取任务列表失败: {e}")
-        return jsonify({"error": str(e)}), 500
+    # 仅支持迅雷下载器，迅雷任务通过迅雷页面管理，此处返回空列表
+    return jsonify({"torrents": []})
 
 @app.route('/api/download/add', methods=['POST'])
 @login_required
 def add_torrent():
-    try:
-        data = request.json
-        client = get_downloader_client()
-
-        task_type = data.get("type")
-        task_value = data.get("value")
-
-        if task_type == "url":
-            # 直接尝试添加磁力链接任务
-            if isinstance(client, TransmissionClient):
-                client.add_torrent(torrent=task_value)
-            else:
-                client.torrents_add(urls=task_value)
-
-        elif task_type == "base64":
-            # 解码Base64字符串并添加种子文件任务
-            import base64
-            try:
-                # 解码Base64字符串
-                torrent_data = base64.b64decode(task_value)
-            except Exception as e:
-                logger.error(f"Base64解码失败: {e}")
-                return jsonify({"error": "无效的Base64数据"}), 400
-
-            # 添加种子文件任务
-            if isinstance(client, TransmissionClient):
-                client.add_torrent(torrent=torrent_data)
-            else:
-                client.torrents_add(torrent_files=[torrent_data])
-
-        else:
-            return jsonify({"error": "无效的添加类型"}), 400
-
-        return jsonify({"message": "添加成功"})
-    except Exception as e:
-        logger.error(f"添加任务失败: {e}")
-        return jsonify({"error": str(e)}), 500
+    # 仅支持迅雷下载器，迅雷通过 Selenium 远程添加任务
+    return jsonify({"error": "当前仅支持迅雷下载器，请通过迅雷页面添加任务"}), 400
 
 # 批量操作（启动、暂停、删除）的API
 @app.route('/api/download/<action>', methods=['POST'])
 @login_required
 def bulk_action(action):
-    try:
-        data = request.json
-        client = get_downloader_client()
-
-        # 获取任务 ID 列表
-        task_ids = data.get("ids", [])
-        logger.info(f"执行操作 {action}，任务ID列表: {task_ids}")
-        
-        if not task_ids:
-            return jsonify({"error": "任务 ID 列表为空"}), 400
-
-        # 获取 delete_with_files 配置（仅在删除操作时使用）
-        delete_with_files = False
-        if action == "delete":
-            db = get_db()
-            delete_with_files_config = db.execute('SELECT VALUE FROM CONFIG WHERE OPTION = ?', ('delete_with_files',)).fetchone()
-            delete_with_files = delete_with_files_config and delete_with_files_config['VALUE'] == 'True'
-            logger.info(f"delete_with_files 配置: {delete_with_files}")
-
-        # 执行批量操作
-        if action == "start":
-            if isinstance(client, TransmissionClient):
-                client.start_torrent([int(task_id) for task_id in task_ids])
-            else:
-                # 对于qBittorrent，逐个处理任务以确保所有任务都被正确处理
-                for task_id in task_ids:
-                    try:
-                        client.torrents_resume(hashes=task_id)
-                        logger.info(f"已启动任务: {task_id}")
-                    except Exception as e:
-                        logger.error(f"启动任务 {task_id} 失败: {e}")
-        elif action == "pause":
-            if isinstance(client, TransmissionClient):
-                client.stop_torrent([int(task_id) for task_id in task_ids])
-            else:
-                # 对于qBittorrent，逐个处理任务
-                for task_id in task_ids:
-                    try:
-                        client.torrents_pause(hashes=task_id)
-                        logger.info(f"已暂停任务: {task_id}")
-                    except Exception as e:
-                        logger.error(f"暂停任务 {task_id} 失败: {e}")
-        elif action == "delete":
-            if isinstance(client, TransmissionClient):
-                client.remove_torrent([int(task_id) for task_id in task_ids], delete_data=delete_with_files)
-            else:
-                # 对于qBittorrent，逐个处理任务
-                for task_id in task_ids:
-                    try:
-                        client.torrents_delete(delete_files=delete_with_files, hashes=task_id)
-                        logger.info(f"已删除任务: {task_id}")
-                    except Exception as e:
-                        logger.error(f"删除任务 {task_id} 失败: {e}")
-        else:
-            return jsonify({"error": "无效的操作"}), 400
-
-        logger.info(f"{action} 操作成功完成")
-        return jsonify({"message": f"{action} 成功"})
-    except Exception as e:
-        logger.error(f"批量操作失败: {e}", exc_info=True)
-        return jsonify({"error": str(e)}), 500
+    # 仅支持迅雷下载器，迅雷通过迅雷页面管理
+    return jsonify({"error": "当前仅支持迅雷下载器，批量操作请通过迅雷页面进行"}), 400
 
 # 用于切换 delete_with_files 设置
 @app.route('/api/download/toggle_delete_with_files', methods=['POST'])
@@ -1832,53 +1635,8 @@ def toggle_auto_delete_completed_tasks():
 @app.route('/api/download/get-magnet-links', methods=['POST'])
 @login_required
 def get_magnet_links():
-    try:
-        # 获取请求数据
-        data = request.json
-        task_ids = data.get("ids", [])
-
-        # 检查任务 ID 列表是否为空
-        if not task_ids:
-            return jsonify({"error": "任务 ID 列表为空"}), 400
-
-        # 获取下载器客户端
-        client = get_downloader_client()
-
-        # 根据下载器类型校验任务 ID 格式
-        if isinstance(client, TransmissionClient):
-            # Transmission 使用整数 ID
-            try:
-                task_ids = [int(task_id) for task_id in task_ids]
-            except ValueError:
-                return jsonify({"error": "无效的任务 ID，应为整数"}), 400
-        else:
-            # qBittorrent 使用 SHA-1 哈希值
-            for task_id in task_ids:
-                if not re.match(r'^[a-fA-F0-9]{40}$', task_id):
-                    return jsonify({"error": f"无效的任务 ID: {task_id}，应为 40 字符的 SHA-1 哈希值"}), 400
-
-        # 获取磁力链接
-        magnet_links = []
-
-        if isinstance(client, TransmissionClient):
-            # Transmission 获取磁力链接
-            torrents = client.get_torrents(ids=task_ids)
-            for torrent in torrents:
-                magnet_links.append(torrent.magnet_link)
-        else:
-            # qBittorrent 获取磁力链接
-            for task_id in task_ids:
-                try:
-                    magnet_link = client.torrents_info(hashes=[task_id])[0].magnet_uri
-                    magnet_links.append(magnet_link)
-                except IndexError:
-                    logger.warning(f"任务 ID {task_id} 未找到对应的磁力链接")
-                    continue
-
-        return jsonify({"magnetLinks": magnet_links})
-    except Exception as e:
-        logger.error(f"获取磁力链接失败: {e}")
-        return jsonify({"error": str(e)}), 500
+    # 仅支持迅雷下载器，迅雷任务通过迅雷页面管理
+    return jsonify({"error": "当前仅支持迅雷下载器，获取磁力链接请通过迅雷页面进行"}), 400
 
 @app.route('/test_downloader_connection', methods=['POST'])
 @login_required
@@ -1886,41 +1644,8 @@ def test_downloader_connection():
     """
     测试下载器连接
     """
-    try:
-        data = request.json
-        downloader = data.get('downloader')
-        host = data.get('host')
-        port = data.get('port')
-        username = data.get('username')
-        password = data.get('password')
-        
-        if downloader == 'transmission':
-            client = TransmissionClient(
-                host=host,
-                port=port,
-                username=username,
-                password=password
-            )
-            # 尝试获取会话信息来测试连接
-            client.get_session()
-            return jsonify({"success": True, "message": "Transmission连接成功"})
-            
-        elif downloader == 'qbittorrent':
-            client = QbittorrentClient(
-                host=f"http://{host}:{port}",
-                username=username,
-                password=password
-            )
-            # 尝试获取应用版本来测试连接
-            client.app_version()
-            return jsonify({"success": True, "message": "qBittorrent连接成功"})
-            
-        else:
-            return jsonify({"success": False, "message": "不支持的下载器类型"}), 400
-            
-    except Exception as e:
-        logger.error(f"下载器连接测试失败: {e}")
-        return jsonify({"success": False, "message": str(e)}), 200
+    # 仅支持迅雷下载器，迅雷通过 Selenium 远程登录测试，无需 HTTP 连接测试
+    return jsonify({"success": False, "message": "当前仅支持迅雷下载器，无需测试连接"}), 400
 
 @app.route('/test_tmm_connection', methods=['POST'])
 @login_required

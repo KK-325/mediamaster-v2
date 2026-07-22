@@ -6,7 +6,5 @@ schedule
 flask
 watchdog
 bcrypt
-transmission-rpc
-qbittorrent-api
 bencodepy
 guessit
