@@ -1214,6 +1214,83 @@ def stop_realtime_log(service):
         logger.error(f"停止实时日志传输失败: {e}")
         return jsonify({"message": "停止实时日志传输失败"}), 500
 
+@app.route('/run_full_workflow', methods=['POST'])
+@login_required
+def run_full_workflow():
+    """一键启动完整自动化流程,顺序执行核心脚本"""
+    try:
+        # 顺序执行的核心流程
+        workflow_steps = [
+            ('scan_media', '扫描媒体库'),
+            ('subscr', '刷新豆瓣兴趣'),
+            ('check_subscr', '刷新正在订阅'),
+            ('tmdb_id', '刷新TMDB ID'),
+            ('indexer', '更新站点索引'),
+            ('downloader', '订阅检索下载'),
+            ('dateadded', '更新添加日期'),
+            ('actor_nfo', '演职人员更新'),
+            ('scrape_metadata', '刮削媒体元数据'),
+        ]
+
+        results = []
+        for service, desc in workflow_steps:
+            # 检查该服务是否正在运行
+            if service in running_services:
+                old_pid = running_services[service]
+                try:
+                    os.kill(old_pid, 9)
+                except (ProcessLookupError, PermissionError):
+                    pass
+                running_services.pop(service, None)
+
+            log_file_path = f'/tmp/log/{service}.log'
+            os.makedirs(os.path.dirname(log_file_path), exist_ok=True)
+            try:
+                with open(log_file_path, 'w', encoding='utf-8') as log_file:
+                    process = subprocess.Popen(
+                        ['python3', f'/app/{service}.py'],
+                        stdout=log_file,
+                        stderr=log_file
+                    )
+                    running_services[service] = process.pid
+
+                # 等待该步骤完成(最长 10 分钟)
+                try:
+                    process.wait(timeout=600)
+                    returncode = process.returncode
+                except subprocess.TimeoutExpired:
+                    process.kill()
+                    process.wait()
+                    returncode = -1
+
+                if returncode == 0:
+                    results.append({"service": service, "desc": desc, "status": "success"})
+                    logger.info(f"一键流程 - {desc}({service}) 完成")
+                else:
+                    results.append({"service": service, "desc": desc, "status": "failed", "returncode": returncode})
+                    logger.warning(f"一键流程 - {desc}({service}) 失败,返回码: {returncode}")
+
+                running_services.pop(service, None)
+
+            except Exception as e:
+                results.append({"service": service, "desc": desc, "status": "error", "error": str(e)})
+                logger.error(f"一键流程 - {desc}({service}) 执行出错: {e}")
+                running_services.pop(service, None)
+                # 继续执行下一步,不因单步失败中断
+
+        success_count = sum(1 for r in results if r["status"] == "success")
+        total_count = len(results)
+        logger.info(f"一键流程完成: {success_count}/{total_count} 步骤成功")
+        return jsonify({
+            "message": f"完整流程执行完成: {success_count}/{total_count} 步骤成功",
+            "results": results,
+            "success_count": success_count,
+            "total_count": total_count
+        }), 200
+    except Exception as e:
+        logger.error(f"一键流程执行失败: {e}")
+        return jsonify({"message": f"流程执行失败: {str(e)}"}), 500
+
 GROUP_MAPPING = {
     "浏览器驱动": {
         "chromedriver_path": {"type": "text", "label": "ChromeDriver 路径（Windows 可填 chromedriver.exe）"}

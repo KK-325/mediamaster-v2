@@ -644,10 +644,47 @@ def update_miss_tmdb_id(cursor):
     logging.info(f"tmdb_id 补全完成：电影 {len(movies_to_fill)} 条，电视剧 {len(tvs_to_fill)} 条")
 
 def send_notification(title_text):
-    # 统一通知（Bark + 钉钉双通道）
+    """统一通知(Bark + 钉钉双通道),带 24 小时去重"""
+    import json
+    import time
+    import os
+
+    # 去重缓存文件
+    cache_file = '/tmp/notification_dedup.json'
+    dedup_ttl = 86400  # 24 小时(秒)
+
+    # 生成去重 key(基于通知内容)
+    dedup_key = title_text.strip()
+
+    # 读取已有缓存
+    now = time.time()
+    sent_cache = {}
+    try:
+        if os.path.exists(cache_file):
+            with open(cache_file, 'r', encoding='utf-8') as f:
+                sent_cache = json.load(f)
+    except (json.JSONDecodeError, OSError):
+        sent_cache = {}
+
+    # 清理过期记录
+    sent_cache = {k: v for k, v in sent_cache.items() if now - v < dedup_ttl}
+
+    # 检查是否已发送过
+    if dedup_key in sent_cache:
+        logging.info(f"通知去重: 24小时内已发送过,跳过 - {title_text}")
+        return
+
+    # 发送通知
     try:
         from notifier import Notifier
         Notifier(config).send("订阅通知", title_text)
+        # 记录已发送
+        sent_cache[dedup_key] = now
+        try:
+            with open(cache_file, 'w', encoding='utf-8') as f:
+                json.dump(sent_cache, f, ensure_ascii=False)
+        except OSError as e:
+            logging.warning(f"写入通知去重缓存失败: {e}")
     except Exception as e:
         logging.error(f"发送通知失败: {e}")
 
