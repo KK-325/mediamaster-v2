@@ -1197,8 +1197,10 @@ GROUP_MAPPING = {
         "run_interval_hours": {"type": "text", "label": "自动化流程间隔"}
     },
     "消息通知": {
-        "notification": {"type": "switch", "label": "消息通知"},
+        "notification": {"type": "switch", "label": "消息通知总开关"},
+        "bark_enabled": {"type": "switch", "label": "Bark 推送"},
         "notification_api_key": {"type": "password", "label": "Bark API密钥"},
+        "dingtalk_enabled": {"type": "switch", "label": "钉钉推送"},
         "dingtalk_webhook": {"type": "password", "label": "钉钉机器人Webhook"},
         "dingtalk_secret": {"type": "password", "label": "钉钉加签密钥"},
     },
@@ -1646,6 +1648,75 @@ def test_downloader_connection():
     """
     # 仅支持迅雷下载器，迅雷通过 Selenium 远程登录测试，无需 HTTP 连接测试
     return jsonify({"success": False, "message": "当前仅支持迅雷下载器，无需测试连接"}), 400
+
+@app.route('/test_bark', methods=['POST'])
+@login_required
+def test_bark():
+    """测试 Bark 推送"""
+    try:
+        data = request.json or {}
+        api_key = (data.get('api_key') or '').strip()
+        if not api_key:
+            db = get_db()
+            row = db.execute("SELECT VALUE FROM CONFIG WHERE OPTION = 'notification_api_key'").fetchone()
+            api_key = (row['VALUE'] if row else '').strip()
+        if not api_key:
+            return jsonify({"success": False, "message": "未配置 Bark API 密钥"})
+        api_url = f"https://api.day.app/{api_key}"
+        payload = {"title": "MediaMaster 测试", "body": "Bark 推送测试成功！"}
+        resp = requests.post(api_url, data=json.dumps(payload), headers={'Content-Type': 'application/json'}, timeout=10)
+        if resp.status_code == 200:
+            return jsonify({"success": True, "message": "Bark 推送测试成功！"})
+        return jsonify({"success": False, "message": f"Bark 推送失败: {resp.status_code} {resp.text}"})
+    except Exception as e:
+        logger.error(f"Bark 测试失败: {e}")
+        return jsonify({"success": False, "message": f"Bark 测试异常: {e}"})
+
+@app.route('/test_dingtalk', methods=['POST'])
+@login_required
+def test_dingtalk():
+    """测试钉钉推送"""
+    try:
+        data = request.json or {}
+        webhook = (data.get('webhook') or '').strip()
+        secret = (data.get('secret') or '').strip()
+        if not webhook:
+            db = get_db()
+            row = db.execute("SELECT VALUE FROM CONFIG WHERE OPTION = 'dingtalk_webhook'").fetchone()
+            webhook = (row['VALUE'] if row else '').strip()
+            row = db.execute("SELECT VALUE FROM CONFIG WHERE OPTION = 'dingtalk_secret'").fetchone()
+            secret = (row['VALUE'] if row else '').strip()
+        if not webhook:
+            return jsonify({"success": False, "message": "未配置钉钉 Webhook"})
+
+        # 加签
+        import time as _time
+        import hashlib as _hashlib
+        import hmac as _hmac
+        import base64 as _base64
+        import urllib.parse as _uparse
+        if secret:
+            timestamp = str(round(_time.time() * 1000))
+            string_to_sign = f"{timestamp}\n{secret}"
+            hmac_code = _hmac.new(secret.encode("utf-8"), string_to_sign.encode("utf-8"), digestmod=_hashlib.sha256).digest()
+            sign = _uparse.quote_plus(_base64.b64encode(hmac_code))
+            webhook = f"{webhook}&timestamp={timestamp}&sign={sign}"
+
+        payload = {
+            "msgtype": "markdown",
+            "markdown": {
+                "title": "📢 MediaMaster 测试",
+                "text": "### 📢 MediaMaster 测试\n\n钉钉推送测试成功！"
+            }
+        }
+        resp = requests.post(webhook, data=json.dumps(payload), headers={'Content-Type': 'application/json'}, timeout=10)
+        resp_json = resp.json() if resp.status_code == 200 else {}
+        if resp.status_code == 200 and resp_json.get("errcode") == 0:
+            return jsonify({"success": True, "message": "钉钉推送测试成功！"})
+        return jsonify({"success": False, "message": f"钉钉推送失败: {resp.status_code} {resp.text}"})
+    except Exception as e:
+        logger.error(f"钉钉测试失败: {e}")
+        return jsonify({"success": False, "message": f"钉钉测试异常: {e}"})
 
 @app.route('/test_tmm_connection', methods=['POST'])
 @login_required

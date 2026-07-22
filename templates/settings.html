@@ -48,10 +48,10 @@
                                     {% if field.type == 'switch' %}
                                     <div class="switch-container">
                                         <label for="{{ key }}" class="form-label fw-medium">{{ field.label }}</label>
-                                        
+
                                         <!-- 隐藏字段存储 ID -->
                                         <input type="hidden" name="{{ key }}_id" value="{{ field.id }}">
-                                        
+
                                         <label class="switch">
                                             <input type="checkbox" name="{{ key }}" id="{{ key }}" {% if field.value == 'True' %}checked{% endif %}>
                                             <span class="slider"></span>
@@ -59,13 +59,25 @@
                                     </div>
                                     {% else %}
                                     <label for="{{ key }}" class="form-label fw-medium">{{ field.label }}</label>
-                                    
+
                                     <!-- 隐藏字段存储 ID -->
                                     <input type="hidden" name="{{ key }}_id" value="{{ field.id }}">
-                                    
-                                    <input type="password" class="form-control" name="{{ key }}" id="{{ key }}" value="{{ field.value }}">
+
+                                    <div class="input-group">
+                                        <input type="password" class="form-control" name="{{ key }}" id="{{ key }}" value="{{ field.value }}">
+                                        {% if key == 'notification_api_key' %}
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="testBarkBtn">
+                                            <i class="bi bi-send"></i> 测试
+                                        </button>
+                                        {% endif %}
+                                        {% if key == 'dingtalk_secret' %}
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="testDingtalkBtn">
+                                            <i class="bi bi-send"></i> 测试
+                                        </button>
+                                        {% endif %}
+                                    </div>
                                     {% endif %}
-                                    
+
                                     {% if key == 'notification_api_key' %}
                                     <div class="form-text">
                                         <i class="bi bi-info-circle me-1"></i> Bark API密钥用于接收推送通知。
@@ -83,6 +95,8 @@
                                     {% endif %}
                                 </div>
                                 {% endfor %}
+                                <div id="barkTestResult" class="mt-2"></div>
+                                <div id="dingtalkTestResult" class="mt-2"></div>
                             </div>
                         </div>
                     </div>
@@ -965,16 +979,24 @@
 
         // 动态显示/隐藏下载器相关配置项
         function toggleDownloaderFields() {
-            // 根据 notification 开关显示/隐藏通知相关配置项
+            // 根据 notification 总开关显示/隐藏通知相关配置项
             var notificationChecked = $('#notification').is(':checked');
             if (notificationChecked) {
+                $('#form-group-bark_enabled').show();
                 $('#form-group-notification_api_key').show();
+                $('#form-group-dingtalk_enabled').show();
                 $('#form-group-dingtalk_webhook').show();
                 $('#form-group-dingtalk_secret').show();
+                $('#testBarkBtn').show();
+                $('#testDingtalkBtn').show();
             } else {
+                $('#form-group-bark_enabled').hide();
                 $('#form-group-notification_api_key').hide();
+                $('#form-group-dingtalk_enabled').hide();
                 $('#form-group-dingtalk_webhook').hide();
                 $('#form-group-dingtalk_secret').hide();
+                $('#testBarkBtn').hide();
+                $('#testDingtalkBtn').hide();
             }
 
             // 根据 actor_nfo 开关显示/隐藏相关配置项
@@ -1176,6 +1198,51 @@
         // 测试下载器连接功能（当前仅支持迅雷，按钮已隐藏）
         $('#testDownloaderBtn').on('click', function() {
             $('#testResult').html('<span class="text-warning"><i class="bi bi-exclamation-triangle"></i> 当前仅支持迅雷下载器，无需测试连接</span>');
+        });
+
+        // 测试 Bark 推送
+        $('#testBarkBtn').on('click', function() {
+            var apiKey = $('#notification_api_key').val();
+            $('#barkTestResult').html('<span class="text-info"><i class="bi bi-arrow-repeat"></i> 测试中...</span>');
+            $.ajax({
+                url: '/test_bark',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ api_key: apiKey }),
+                success: function(response) {
+                    if (response.success) {
+                        $('#barkTestResult').html('<span class="text-success"><i class="bi bi-check-circle"></i> ' + response.message + '</span>');
+                    } else {
+                        $('#barkTestResult').html('<span class="text-danger"><i class="bi bi-x-circle"></i> ' + response.message + '</span>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#barkTestResult').html('<span class="text-danger"><i class="bi bi-x-circle"></i> 测试请求失败：' + error + '</span>');
+                }
+            });
+        });
+
+        // 测试钉钉推送
+        $('#testDingtalkBtn').on('click', function() {
+            var webhook = $('#dingtalk_webhook').val();
+            var secret = $('#dingtalk_secret').val();
+            $('#dingtalkTestResult').html('<span class="text-info"><i class="bi bi-arrow-repeat"></i> 测试中...</span>');
+            $.ajax({
+                url: '/test_dingtalk',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ webhook: webhook, secret: secret }),
+                success: function(response) {
+                    if (response.success) {
+                        $('#dingtalkTestResult').html('<span class="text-success"><i class="bi bi-check-circle"></i> ' + response.message + '</span>');
+                    } else {
+                        $('#dingtalkTestResult').html('<span class="text-danger"><i class="bi bi-x-circle"></i> ' + response.message + '</span>');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#dingtalkTestResult').html('<span class="text-danger"><i class="bi bi-x-circle"></i> 测试请求失败：' + error + '</span>');
+                }
+            });
         });
     });
 

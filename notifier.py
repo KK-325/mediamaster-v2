@@ -34,22 +34,26 @@ class Notifier:
     def __init__(self, config=None):
         self.config = config if config is not None else _load_config()
         self.enabled = str(self.config.get("notification", "")).strip().lower() == "true"
+        self.bark_enabled = str(self.config.get("bark_enabled", "False")).strip().lower() == "true"
+        self.dingtalk_enabled = str(self.config.get("dingtalk_enabled", "False")).strip().lower() == "true"
         self.bark_key = (self.config.get("notification_api_key", "") or "").strip()
         self.dingtalk_webhook = (self.config.get("dingtalk_webhook", "") or "").strip()
         self.dingtalk_secret = (self.config.get("dingtalk_secret", "") or "").strip()
 
     def send(self, title, body):
-        """统一发送入口，根据配置并行发送到启用的通道"""
+        """统一发送入口，根据配置分别发送到启用的通道"""
         if not self.enabled:
             logging.info("通知功能未启用，跳过发送通知。")
             return
-        if not self.bark_key and not self.dingtalk_webhook:
-            logging.warning("通知已启用但未配置任何通知通道（Bark/钉钉），跳过发送。")
-            return
-        if self.bark_key:
+        sent_any = False
+        if self.bark_enabled and self.bark_key:
             self._send_bark(title, body)
-        if self.dingtalk_webhook:
+            sent_any = True
+        if self.dingtalk_enabled and self.dingtalk_webhook:
             self._send_dingtalk(title, body)
+            sent_any = True
+        if not sent_any:
+            logging.warning("通知已启用但未开启任何通道（Bark/钉钉）或未配置，跳过发送。")
 
     def _send_bark(self, title, body):
         """Bark 通知"""

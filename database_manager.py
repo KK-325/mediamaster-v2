@@ -191,7 +191,9 @@ def create_tables():
     # 插入默认配置数据
     default_configs = [
         ("notification", "False"),
+        ("bark_enabled", "False"),
         ("notification_api_key", "your_api_key"),
+        ("dingtalk_enabled", "False"),
         ("dingtalk_webhook", ""),
         ("dingtalk_secret", ""),
         ("chromedriver_path", ""),
@@ -507,7 +509,9 @@ def ensure_all_configs_exist():
     # 默认配置项 (移除了 douban_rss_url，添加了 douban_user_ids)
     default_configs = [
         ("notification", "False"),
+        ("bark_enabled", "False"),
         ("notification_api_key", "your_api_key"),
+        ("dingtalk_enabled", "False"),
         ("dingtalk_webhook", ""),
         ("dingtalk_secret", ""),
         ("chromedriver_path", ""),
@@ -617,7 +621,9 @@ def check_config_data():
 
     default_configs = {
         "notification": "False",
+        "bark_enabled": "False",
         "notification_api_key": "your_api_key",
+        "dingtalk_enabled": "False",
         "dingtalk_webhook": "",
         "dingtalk_secret": "",
         "chromedriver_path": "",
