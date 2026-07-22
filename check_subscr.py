@@ -32,10 +32,10 @@ def load_config(db_path):
 
 def subscribe_movies(cursor):
     """订阅电影 - 根据状态决定是否订阅"""
-    cursor.execute('SELECT title, year, douban_id, status FROM RSS_MOVIES')
+    cursor.execute('SELECT title, year, douban_id, tmdb_id, status FROM RSS_MOVIES')
     rss_movies = cursor.fetchall()
 
-    for title, year, douban_id, status in rss_movies:
+    for title, year, douban_id, tmdb_id, status in rss_movies:
         # 如果状态是"看过"，则不应订阅，如果已在订阅中则应移除
         if status == "看过":
             # 检查是否在 MISS_MOVIES 中，如果在则移除
@@ -49,12 +49,12 @@ def subscribe_movies(cursor):
             else:
                 logging.info(f"影片：{title}（{year}) 状态为'看过'，未在订阅列表中")
             continue
-        
+
         # 对于"想看"和"在看"状态，执行原有订阅逻辑
         if not cursor.execute('SELECT 1 FROM LIB_MOVIES WHERE title = ? AND year = ?', (title, year)).fetchone():
             cursor.execute(
-                'INSERT OR IGNORE INTO MISS_MOVIES (title, year, douban_id) VALUES (?, ?, ?)',
-                (title, year, douban_id)
+                'INSERT OR IGNORE INTO MISS_MOVIES (title, year, douban_id, tmdb_id) VALUES (?, ?, ?, ?)',
+                (title, year, douban_id, tmdb_id)
             )
             if cursor.rowcount > 0:
                 logging.info(f"影片：{title}（{year}) 已添加订阅！")
@@ -66,10 +66,10 @@ def subscribe_movies(cursor):
 
 def subscribe_tvs(cursor):
     """订阅电视剧 - 支持别名关联和状态检查"""
-    cursor.execute('SELECT title, season, episode, year, douban_id, status FROM RSS_TVS')
+    cursor.execute('SELECT title, season, episode, year, douban_id, tmdb_id, status FROM RSS_TVS')
     rss_tvs = cursor.fetchall()
 
-    for title, season, total_episodes, year, douban_id, status in rss_tvs:
+    for title, season, total_episodes, year, douban_id, tmdb_id, status in rss_tvs:
         # 如果状态是"看过"，则不应订阅，如果已在订阅中则应移除
         if status == "看过":
             # 检查是否在 MISS_TVS 中，如果在则移除
@@ -119,8 +119,8 @@ def subscribe_tvs(cursor):
             if not miss_row:
                 # 完全新订阅
                 cursor.execute(
-                    'INSERT INTO MISS_TVS (title, year, season, missing_episodes, douban_id) VALUES (?, ?, ?, ?, ?)',
-                    (title, year, season, missing_episodes_str, douban_id)
+                    'INSERT INTO MISS_TVS (title, year, season, missing_episodes, douban_id, tmdb_id) VALUES (?, ?, ?, ?, ?, ?)',
+                    (title, year, season, missing_episodes_str, douban_id, tmdb_id)
                 )
                 logging.info(f"电视剧：{title} 第{season}季 已添加订阅！")
                 send_notification(f"电视剧：{title} 第{season}季 已添加订阅！")
@@ -198,8 +198,8 @@ def subscribe_tvs(cursor):
                 if missing_episodes_set:
                     new_missing_episodes_str = ','.join(map(str, sorted(missing_episodes_set)))
                     cursor.execute(
-                        'INSERT INTO MISS_TVS (title, year, season, missing_episodes, douban_id) VALUES (?, ?, ?, ?, ?)',
-                        (title, year, season, new_missing_episodes_str, douban_id)
+                        'INSERT INTO MISS_TVS (title, year, season, missing_episodes, douban_id, tmdb_id) VALUES (?, ?, ?, ?, ?, ?)',
+                        (title, year, season, new_missing_episodes_str, douban_id, tmdb_id)
                     )
                     logging.info(f"电视剧：{title} 第{season}季 缺失 {new_missing_episodes_str} 集，已补充订阅！")
 
@@ -541,6 +541,54 @@ def update_tmdb_items(cursor):
     else:
         logging.info(f"共检查了 {len(movies_without_douban)} 个电影和 {len(tvs_without_douban)} 个电视剧的TMDB信息")
 
+def update_miss_tmdb_id(cursor):
+    """为 MISS_MOVIES / MISS_TVS 中 tmdb_id 为空的记录通过 TMDB 搜索补全 tmdb_id"""
+    TMDB_API_KEY = config.get("tmdb_api_key", "")
+    TMDB_BASE_URL = config.get("tmdb_base_url", "")
+    if not TMDB_API_KEY:
+        logging.warning("TMDB API Key未配置，跳过 tmdb_id 补全")
+        return
+
+    # 电影
+    cursor.execute('SELECT id, title, year FROM MISS_MOVIES WHERE tmdb_id IS NULL')
+    movies_to_fill = cursor.fetchall()
+    for movie_id, title, year in movies_to_fill:
+        try:
+            search_url = f"{TMDB_BASE_URL}/3/search/movie"
+            params = {'api_key': TMDB_API_KEY, 'query': title, 'year': year, 'language': 'zh-CN'}
+            response = requests.get(search_url, params=params, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('results'):
+                    tmdb_id = data['results'][0].get('id')
+                    if tmdb_id:
+                        cursor.execute('UPDATE MISS_MOVIES SET tmdb_id = ? WHERE id = ?', (tmdb_id, movie_id))
+                        logging.info(f"已为电影 '{title}'（{year}）补全 tmdb_id={tmdb_id}")
+            time.sleep(random.uniform(1, 3))
+        except Exception as e:
+            logging.error(f"为电影 '{title}' 补全 tmdb_id 失败: {e}")
+
+    # 电视剧
+    cursor.execute('SELECT id, title, year, season FROM MISS_TVS WHERE tmdb_id IS NULL')
+    tvs_to_fill = cursor.fetchall()
+    for tv_id, title, year, season in tvs_to_fill:
+        try:
+            search_url = f"{TMDB_BASE_URL}/3/search/tv"
+            params = {'api_key': TMDB_API_KEY, 'query': title, 'year': year, 'language': 'zh-CN'}
+            response = requests.get(search_url, params=params, timeout=10)
+            if response.status_code == 200:
+                data = response.json()
+                if data.get('results'):
+                    tmdb_id = data['results'][0].get('id')
+                    if tmdb_id:
+                        cursor.execute('UPDATE MISS_TVS SET tmdb_id = ? WHERE id = ?', (tmdb_id, tv_id))
+                        logging.info(f"已为电视剧 '{title}' 第{season}季（{year}）补全 tmdb_id={tmdb_id}")
+            time.sleep(random.uniform(1, 3))
+        except Exception as e:
+            logging.error(f"为电视剧 '{title}' 补全 tmdb_id 失败: {e}")
+
+    logging.info(f"tmdb_id 补全完成：电影 {len(movies_to_fill)} 条，电视剧 {len(tvs_to_fill)} 条")
+
 def send_notification(title_text):
     # 统一通知（Bark + 钉钉双通道）
     try:
@@ -563,6 +611,9 @@ def main():
 
         # 检查并更新TMDB订阅项目的标题和集数
         update_tmdb_items(cursor)
+
+        # 为 MISS 表补全 tmdb_id（用于统一标识）
+        update_miss_tmdb_id(cursor)
 
         # 订阅电影
         subscribe_movies(cursor)

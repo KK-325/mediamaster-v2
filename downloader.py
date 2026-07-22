@@ -738,47 +738,49 @@ class MediaDownloader:
         try:
             with sqlite3.connect(self.db_path) as conn:
                 cursor = conn.cursor()
-                cursor.execute('SELECT title, year FROM MISS_MOVIES')
+                cursor.execute('SELECT title, year, tmdb_id FROM MISS_MOVIES')
                 movies = cursor.fetchall()
-                for title, year in movies:
+                for title, year, tmdb_id in movies:
                     all_movie_info.append({
                         "标题": title,
-                        "年份": year
+                        "年份": year,
+                        "tmdb_id": tmdb_id
                     })
             logging.debug("读取订阅电影信息完成")
             return all_movie_info
         except Exception as e:
             logging.error(f"提取电影信息时发生错误: {e}")
             return []
-        
+
     def extract_tv_info(self):
         """从数据库读取订阅电视节目信息和缺失的集数信息"""
         all_tv_info = []
-        
+
         with sqlite3.connect(self.db_path) as conn:
             cursor = conn.cursor()
-            
+
             # 读取缺失的电视节目信息和缺失的集数信息
-            cursor.execute('SELECT title, year, season, missing_episodes FROM MISS_TVS')
+            cursor.execute('SELECT title, year, season, missing_episodes, tmdb_id FROM MISS_TVS')
             tvs = cursor.fetchall()
-            
-            for title, year, season, missing_episodes in tvs:
+
+            for title, year, season, missing_episodes, tmdb_id in tvs:
                 # 确保 year 和 season 是字符串类型
                 if isinstance(year, int):
                     year = str(year)  # 将整数转换为字符串
                 if isinstance(season, int):
                     season = str(season)  # 将整数转换为字符串
-                
+
                 # 将缺失的集数字符串转换为列表
                 missing_episodes_list = [episode.strip() for episode in missing_episodes.split(',')] if missing_episodes else []
-                
+
                 all_tv_info.append({
                     "剧集": title,
                     "年份": year,
                     "季": season,
-                    "缺失集数": missing_episodes_list
+                    "缺失集数": missing_episodes_list,
+                    "tmdb_id": tmdb_id
                 })
-        
+
         logging.debug("读取缺失的电视节目信息和缺失的集数信息完成")
         return all_tv_info
 
@@ -1206,12 +1208,20 @@ class MediaDownloader:
                         try:
                             with sqlite3.connect(self.db_path) as conn:
                                 cursor = conn.cursor()
-                                cursor.execute(
-                                    "DELETE FROM MISS_MOVIES WHERE title=? AND year=?",
-                                    (title, year)
-                                )
+                                tmdb_id = movie.get("tmdb_id")
+                                if tmdb_id:
+                                    cursor.execute(
+                                        "DELETE FROM MISS_MOVIES WHERE tmdb_id=?",
+                                        (tmdb_id,)
+                                    )
+                                    logging.info(f"已按 tmdb_id={tmdb_id} 移除已完成的电影订阅: {title} ({year})")
+                                else:
+                                    cursor.execute(
+                                        "DELETE FROM MISS_MOVIES WHERE title=? AND year=?",
+                                        (title, year)
+                                    )
+                                    logging.info(f"已按 title+year 移除已完成的电影订阅: {title} ({year})")
                                 conn.commit()
-                            logging.info(f"已更新订阅数据库，移除已完成的电影订阅: {title} ({year})")
                         except Exception as e:
                             logging.error(f"更新订阅数据库时出错: {e}")
                         
@@ -1465,11 +1475,18 @@ class MediaDownloader:
                 try:
                     with sqlite3.connect(self.db_path) as conn:
                         cursor = conn.cursor()
+                        tmdb_id = tvshow.get("tmdb_id")
                         # 查询当前缺失集数
-                        cursor.execute(
-                            "SELECT missing_episodes FROM MISS_TVS WHERE title=? AND year=? AND season=?",
-                            (title, year, season)
-                        )
+                        if tmdb_id:
+                            cursor.execute(
+                                "SELECT missing_episodes FROM MISS_TVS WHERE tmdb_id=?",
+                                (tmdb_id,)
+                            )
+                        else:
+                            cursor.execute(
+                                "SELECT missing_episodes FROM MISS_TVS WHERE title=? AND year=? AND season=?",
+                                (title, year, season)
+                            )
                         row = cursor.fetchone()
                         if row:
                             current_missing = [ep.strip() for ep in row[0].split(',') if ep.strip()]
@@ -1477,17 +1494,29 @@ class MediaDownloader:
                             updated_missing = [ep for ep in current_missing if ep and int(ep) not in successfully_downloaded_episodes]
                             if updated_missing:
                                 # 还有未下载的缺失集，更新数据库
-                                cursor.execute(
-                                    "UPDATE MISS_TVS SET missing_episodes=? WHERE title=? AND year=? AND season=?",
-                                    (",".join(updated_missing), title, year, season)
-                                )
+                                if tmdb_id:
+                                    cursor.execute(
+                                        "UPDATE MISS_TVS SET missing_episodes=? WHERE tmdb_id=?",
+                                        (",".join(updated_missing), tmdb_id)
+                                    )
+                                else:
+                                    cursor.execute(
+                                        "UPDATE MISS_TVS SET missing_episodes=? WHERE title=? AND year=? AND season=?",
+                                        (",".join(updated_missing), title, year, season)
+                                    )
                                 logging.info(f"部分集数已下载，剩余缺失集数已更新: {title} S{season} ({year})，剩余缺失集: {updated_missing}")
                             else:
                                 # 所有缺失集已下载，删除订阅
-                                cursor.execute(
-                                    "DELETE FROM MISS_TVS WHERE title=? AND year=? AND season=?",
-                                    (title, year, season)
-                                )
+                                if tmdb_id:
+                                    cursor.execute(
+                                        "DELETE FROM MISS_TVS WHERE tmdb_id=?",
+                                        (tmdb_id,)
+                                    )
+                                else:
+                                    cursor.execute(
+                                        "DELETE FROM MISS_TVS WHERE title=? AND year=? AND season=?",
+                                        (title, year, season)
+                                    )
                                 logging.info(f"所有缺失集已下载，已完成订阅并移除: {title} S{season} ({year})")
                             conn.commit()
                 except Exception as e:

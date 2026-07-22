@@ -294,16 +294,16 @@ def create_tables():
 
 def migrate_rss_tables_with_status():
     """
-    迁移 RSS_MOVIES 和 RSS_TVS 表，添加 STATUS 字段
+    迁移 RSS_MOVIES 和 RSS_TVS 表，添加 STATUS 字段，并添加 TMDB_ID 字段
     """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-    
+
     # 检查 RSS_MOVIES 表是否已有 STATUS 字段
     cursor.execute("PRAGMA table_info(RSS_MOVIES)")
     columns = cursor.fetchall()
     status_column_exists_in_movies = any(column[1] == 'STATUS' for column in columns)
-    
+
     # 如果没有 STATUS 字段，添加它
     if not status_column_exists_in_movies:
         try:
@@ -311,12 +311,12 @@ def migrate_rss_tables_with_status():
             logging.info("已向 RSS_MOVIES 表添加 STATUS 字段")
         except sqlite3.OperationalError as e:
             logging.warning(f"添加 STATUS 字段到 RSS_MOVIES 表时出错: {e}")
-    
+
     # 检查 RSS_TVS 表是否已有 STATUS 字段
     cursor.execute("PRAGMA table_info(RSS_TVS)")
     columns = cursor.fetchall()
     status_column_exists_in_tvs = any(column[1] == 'STATUS' for column in columns)
-    
+
     # 如果没有 STATUS 字段，添加它
     if not status_column_exists_in_tvs:
         try:
@@ -324,7 +324,31 @@ def migrate_rss_tables_with_status():
             logging.info("已向 RSS_TVS 表添加 STATUS 字段")
         except sqlite3.OperationalError as e:
             logging.warning(f"添加 STATUS 字段到 RSS_TVS 表时出错: {e}")
-    
+
+    conn.commit()
+    conn.close()
+
+def migrate_tables_with_tmdb_id():
+    """
+    迁移订阅相关表，添加 TMDB_ID 字段用于统一标识
+    涉及表：RSS_MOVIES, RSS_TVS, MISS_MOVIES, MISS_TVS
+    """
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    tables_to_migrate = ["RSS_MOVIES", "RSS_TVS", "MISS_MOVIES", "MISS_TVS"]
+
+    for table in tables_to_migrate:
+        cursor.execute(f"PRAGMA table_info({table})")
+        columns = cursor.fetchall()
+        tmdb_id_exists = any(column[1] == 'TMDB_ID' for column in columns)
+        if not tmdb_id_exists:
+            try:
+                cursor.execute(f"ALTER TABLE {table} ADD COLUMN TMDB_ID INTEGER")
+                logging.info(f"已向 {table} 表添加 TMDB_ID 字段")
+            except sqlite3.OperationalError as e:
+                logging.warning(f"添加 TMDB_ID 字段到 {table} 表时出错: {e}")
+
     conn.commit()
     conn.close()
 
@@ -496,6 +520,9 @@ def check_and_update_tables():
     
     # 添加 STATUS 字段到 RSS 表
     migrate_rss_tables_with_status()
+
+    # 添加 TMDB_ID 字段到订阅相关表
+    migrate_tables_with_tmdb_id()
 
     conn.close()
 
