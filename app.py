@@ -780,6 +780,7 @@ def add_subscription():
         season = data.get('season', 1)  # 默认第一季
         start_episode = data.get('start_episode')
         end_episode = data.get('end_episode')
+        tmdb_id = data.get('tmdb_id')  # 新增：手动添加时可选携带 tmdb_id
 
         # 检查必要字段
         if not subscription_type or not title or not year:
@@ -814,19 +815,24 @@ def add_subscription():
             max_id = max_id_row['max_id'] if max_id_row['max_id'] else 0
             new_douban_id = f"manual-{max_id + 1}"
 
-            # 检查是否已存在相同的订阅
-            existing_tv = db.execute(
-                'SELECT * FROM MISS_TVS WHERE title = ? AND year = ? AND season = ?',
-                (title, year, season)
-            ).fetchone()
+            # 检查是否已存在相同的订阅（优先用 tmdb_id 去重）
+            if tmdb_id:
+                existing_tv = db.execute(
+                    'SELECT * FROM MISS_TVS WHERE tmdb_id = ?', (tmdb_id,)
+                ).fetchone()
+            else:
+                existing_tv = db.execute(
+                    'SELECT * FROM MISS_TVS WHERE title = ? AND year = ? AND season = ?',
+                    (title, year, season)
+                ).fetchone()
 
             if existing_tv:
                 return jsonify({"success": False, "message": "该电视剧订阅已存在"}), 400
 
             # 插入电视剧订阅
             db.execute(
-                'INSERT INTO MISS_TVS (douban_id, title, year, season, missing_episodes) VALUES (?, ?, ?, ?, ?)',
-                (new_douban_id, title, year, season, missing_episodes)
+                'INSERT INTO MISS_TVS (douban_id, title, year, season, missing_episodes, tmdb_id) VALUES (?, ?, ?, ?, ?, ?)',
+                (new_douban_id, title, year, season, missing_episodes, tmdb_id)
             )
             db.commit()
             logger.info(f"用户添加电视剧订阅: {title} ({year}) 季{season} 集{start_episode}-{end_episode} DOUBAN_ID: {new_douban_id}")
@@ -842,19 +848,24 @@ def add_subscription():
             max_id = max_id_row['max_id'] if max_id_row['max_id'] else 0
             new_douban_id = f"manual{max_id + 1}"
 
-            # 检查是否已存在相同的订阅
-            existing_movie = db.execute(
-                'SELECT * FROM MISS_MOVIES WHERE title = ? AND year = ?',
-                (title, year)
-            ).fetchone()
+            # 检查是否已存在相同的订阅（优先用 tmdb_id 去重）
+            if tmdb_id:
+                existing_movie = db.execute(
+                    'SELECT * FROM MISS_MOVIES WHERE tmdb_id = ?', (tmdb_id,)
+                ).fetchone()
+            else:
+                existing_movie = db.execute(
+                    'SELECT * FROM MISS_MOVIES WHERE title = ? AND year = ?',
+                    (title, year)
+                ).fetchone()
 
             if existing_movie:
                 return jsonify({"success": False, "message": "该电影订阅已存在"}), 400
 
             # 插入电影订阅
             db.execute(
-                'INSERT INTO MISS_MOVIES (douban_id, title, year) VALUES (?, ?, ?)',
-                (new_douban_id, title, year)
+                'INSERT INTO MISS_MOVIES (douban_id, title, year, tmdb_id) VALUES (?, ?, ?, ?)',
+                (new_douban_id, title, year, tmdb_id)
             )
             db.commit()
             logger.info(f"用户添加电影订阅: {title} ({year}) DOUBAN_ID: {new_douban_id}")
@@ -884,41 +895,55 @@ def cancel_subscription():
             return jsonify({"success": False, "message": "缺少必要的参数"}), 400
 
         db = get_db()
+        # 优先用 tmdb_id 匹配，无 tmdb_id 时回退到 title 匹配
+        # 修复：原代码仅用 title 匹配，MISS 标题被改写后用户无法取消订阅
+        tmdb_id = data.get('tmdb_id')
 
         if media_type == 'tv':  # 电视剧取消订阅
-            # 检查是否存在该订阅
-            existing_tv = db.execute(
-                'SELECT * FROM MISS_TVS WHERE title = ? AND year = ? AND season = ?',
-                (title, year, season)
-            ).fetchone()
+            if tmdb_id:
+                existing_tv = db.execute(
+                    'SELECT * FROM MISS_TVS WHERE tmdb_id = ?', (tmdb_id,)
+                ).fetchone()
+            else:
+                existing_tv = db.execute(
+                    'SELECT * FROM MISS_TVS WHERE title = ? AND year = ? AND season = ?',
+                    (title, year, season)
+                ).fetchone()
 
             if not existing_tv:
                 return jsonify({"success": False, "message": "未找到该电视剧订阅"}), 404
 
             # 删除订阅
-            db.execute(
-                'DELETE FROM MISS_TVS WHERE title = ? AND year = ? AND season = ?',
-                (title, year, season)
-            )
+            if tmdb_id:
+                db.execute('DELETE FROM MISS_TVS WHERE tmdb_id = ?', (tmdb_id,))
+            else:
+                db.execute(
+                    'DELETE FROM MISS_TVS WHERE title = ? AND year = ? AND season = ?',
+                    (title, year, season)
+                )
             db.commit()
             logger.info(f"用户取消电视剧订阅: {title} ({year}) 季{season}")
             return jsonify({"success": True, "message": "电视剧订阅已取消"})
 
         elif media_type == 'movie':  # 电影取消订阅
-            # 检查是否存在该订阅
-            existing_movie = db.execute(
-                'SELECT * FROM MISS_MOVIES WHERE title = ? AND year = ?',
-                (title, year)
-            ).fetchone()
+            if tmdb_id:
+                existing_movie = db.execute(
+                    'SELECT * FROM MISS_MOVIES WHERE tmdb_id = ?', (tmdb_id,)
+                ).fetchone()
+            else:
+                existing_movie = db.execute(
+                    'SELECT * FROM MISS_MOVIES WHERE title = ? AND year = ?',
+                    (title, year)
+                ).fetchone()
 
             if not existing_movie:
                 return jsonify({"success": False, "message": "未找到该电影订阅"}), 404
 
             # 删除订阅
-            db.execute(
-                'DELETE FROM MISS_MOVIES WHERE title = ? AND year = ?',
-                (title, year)
-            )
+            if tmdb_id:
+                db.execute('DELETE FROM MISS_MOVIES WHERE tmdb_id = ?', (tmdb_id,))
+            else:
+                db.execute('DELETE FROM MISS_MOVIES WHERE title = ? AND year = ?', (title, year))
             db.commit()
             logger.info(f"用户取消电影订阅: {title} ({year})")
             return jsonify({"success": True, "message": "电影订阅已取消"})

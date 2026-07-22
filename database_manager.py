@@ -332,6 +332,7 @@ def migrate_tables_with_tmdb_id():
     """
     迁移订阅相关表，添加 TMDB_ID 字段用于统一标识
     涉及表：RSS_MOVIES, RSS_TVS, MISS_MOVIES, MISS_TVS
+    同时为 MISS_MOVIES/MISS_TVS 添加基于 TMDB_ID 的部分唯一索引（仅非 NULL 行生效）
     """
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -348,6 +349,19 @@ def migrate_tables_with_tmdb_id():
                 logging.info(f"已向 {table} 表添加 TMDB_ID 字段")
             except sqlite3.OperationalError as e:
                 logging.warning(f"添加 TMDB_ID 字段到 {table} 表时出错: {e}")
+
+    # 为 MISS_MOVIES/MISS_TVS 添加基于 TMDB_ID 的部分唯一索引
+    # 仅对 TMDB_ID IS NOT NULL 的行生效，避免影响旧数据
+    # 这样 INSERT OR IGNORE 可以按 tmdb_id 去重，不再完全依赖 title+year
+    for table in ["MISS_MOVIES", "MISS_TVS"]:
+        try:
+            cursor.execute(
+                f"CREATE UNIQUE INDEX IF NOT EXISTS idx_{table.lower()}_tmdb_id "
+                f"ON {table}(TMDB_ID) WHERE TMDB_ID IS NOT NULL"
+            )
+            logging.info(f"已为 {table} 创建 TMDB_ID 部分唯一索引")
+        except sqlite3.OperationalError as e:
+            logging.warning(f"为 {table} 创建 TMDB_ID 唯一索引时出错: {e}")
 
     conn.commit()
     conn.close()

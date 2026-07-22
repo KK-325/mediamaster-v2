@@ -110,11 +110,24 @@ def subscribe_tvs(cursor):
         actual_title = alias_row[0] if alias_row else title
         actual_season = alias_row[1] if alias_row else season
         
-        # 检查是否已经存在于 MISS_TVS 表中（使用原始标题和季数）
-        miss_row = cursor.execute(
-            'SELECT missing_episodes FROM MISS_TVS WHERE title = ? AND year = ? AND season = ?',
-            (title, year, season)
-        ).fetchone()
+        # 检查是否已经存在于 MISS_TVS 表中
+        # 修复：优先用 tmdb_id（或 douban_id）查询，避免 title 被改写后查不到导致重复插入
+        # 查询时同时取 id，后续 UPDATE/DELETE 统一用 id 定位
+        if tmdb_id:
+            miss_row = cursor.execute(
+                'SELECT id, missing_episodes FROM MISS_TVS WHERE tmdb_id = ?', (tmdb_id,)
+            ).fetchone()
+        elif douban_id:
+            miss_row = cursor.execute(
+                'SELECT id, missing_episodes FROM MISS_TVS WHERE douban_id = ?', (douban_id,)
+            ).fetchone()
+        else:
+            miss_row = cursor.execute(
+                'SELECT id, missing_episodes FROM MISS_TVS WHERE title = ? AND year = ? AND season = ?',
+                (title, year, season)
+            ).fetchone()
+        miss_id = miss_row[0] if miss_row else None
+        miss_episodes_val = miss_row[1] if miss_row else None
         
         # 检查LIB_TVS中是否已存在
         # 优先用 tmdb_id 匹配 LIB_TVS，无 tmdb_id 时回退到 title 匹配（与 update_subscriptions 保持一致）
@@ -127,7 +140,7 @@ def subscribe_tvs(cursor):
         if not lib_exists:
             # 完全未入库的情况
             missing_episodes_str = ','.join(map(str, range(1, total_episodes + 1)))
-            if not miss_row:
+            if not miss_id:
                 # 完全新订阅
                 cursor.execute(
                     'INSERT INTO MISS_TVS (title, year, season, missing_episodes, douban_id, tmdb_id) VALUES (?, ?, ?, ?, ?, ?)',
@@ -137,7 +150,7 @@ def subscribe_tvs(cursor):
                 send_notification(f"电视剧：{title} 第{season}季 已添加订阅！")
             else:
                 # 已存在订阅，检查是否需要更新（总集数是否变化）
-                subscribed_missing = set(int(ep) for ep in miss_row[0].split(',') if ep.strip().isdigit()) if miss_row[0] else set()
+                subscribed_missing = set(int(ep) for ep in miss_episodes_val.split(',') if ep.strip().isdigit()) if miss_episodes_val else set()
                 total_episodes_set = set(range(1, total_episodes + 1))
                 
                 # 如果总集数发生变化，则更新
@@ -145,19 +158,26 @@ def subscribe_tvs(cursor):
                     # 更新缺失集数为最新的总集数范围
                     new_missing_episodes_str = ','.join(map(str, sorted(total_episodes_set)))
                     cursor.execute(
-                        'UPDATE MISS_TVS SET missing_episodes = ? WHERE title = ? AND year = ? AND season = ?',
-                        (new_missing_episodes_str, title, year, season)
+                        'UPDATE MISS_TVS SET missing_episodes = ? WHERE id = ?',
+                        (new_missing_episodes_str, miss_id)
                     )
                     logging.info(f"电视剧：{title} 第{season}季 总集数已更新为{total_episodes}集，已更新订阅！")
                 else:
                     logging.warning(f"电视剧：{title} 第{season}季 已存在于订阅列表中，跳过插入。")
         else:
             # 部分或全部已入库的情况
-            # 使用实际标题和季数查询已存在的集数（不匹配年份）
-            existing_episodes_str = cursor.execute(
-                '''SELECT episodes FROM LIB_TV_SEASONS WHERE tv_id = (SELECT id FROM LIB_TVS WHERE title = ?) AND season = ?''',
-                (actual_title, actual_season)
-            ).fetchone()
+            # 优先用 tmdb_id 查询已存在的集数，无 tmdb_id 时回退到 actual_title 匹配
+            # 修复：原代码用 actual_title 查 LIB_TVS.title，标题不一致时返回空导致误判全部缺失
+            if tmdb_id:
+                existing_episodes_str = cursor.execute(
+                    '''SELECT episodes FROM LIB_TV_SEASONS WHERE tv_id = (SELECT id FROM LIB_TVS WHERE tmdb_id = ?) AND season = ?''',
+                    (tmdb_id, actual_season)
+                ).fetchone()
+            else:
+                existing_episodes_str = cursor.execute(
+                    '''SELECT episodes FROM LIB_TV_SEASONS WHERE tv_id = (SELECT id FROM LIB_TVS WHERE title = ?) AND season = ?''',
+                    (actual_title, actual_season)
+                ).fetchone()
 
             if existing_episodes_str:
                 val = existing_episodes_str[0]
@@ -173,8 +193,8 @@ def subscribe_tvs(cursor):
             total_episodes_set = set(range(1, total_episodes + 1))
             missing_episodes_set = total_episodes_set - existing_episodes
 
-            if miss_row and miss_row[0]:
-                subscribed_missing = set(int(ep) for ep in miss_row[0].split(',') if ep.strip().isdigit())
+            if miss_id and miss_episodes_val:
+                subscribed_missing = set(int(ep) for ep in miss_episodes_val.split(',') if ep.strip().isdigit())
             else:
                 subscribed_missing = set()
 
@@ -184,22 +204,22 @@ def subscribe_tvs(cursor):
             # 需要补充的缺失集
             need_add_missing = missing_episodes_set - subscribed_missing
             
-            if miss_row:
+            if miss_id:
                 # 如果总集数发生了变化，或者需要添加新的缺失集
                 if len(total_episodes_set) != current_subscribed_total or need_add_missing:
                     # 合并后写回
                     new_missing_episodes = sorted(subscribed_missing | need_add_missing)
                     new_missing_episodes_str = ','.join(map(str, new_missing_episodes))
                     cursor.execute(
-                        'UPDATE MISS_TVS SET missing_episodes = ? WHERE title = ? AND year = ? AND season = ?',
-                        (new_missing_episodes_str, title, year, season)
+                        'UPDATE MISS_TVS SET missing_episodes = ? WHERE id = ?',
+                        (new_missing_episodes_str, miss_id)
                     )
                     logging.info(f"电视剧：{title} 第{season}季 缺失 {new_missing_episodes_str} 集，已更新订阅！")
                 elif not missing_episodes_set:
                     # 没有缺失集，删除订阅
                     cursor.execute(
-                        'DELETE FROM MISS_TVS WHERE title = ? AND year = ? AND season = ?',
-                        (title, year, season)
+                        'DELETE FROM MISS_TVS WHERE id = ?',
+                        (miss_id,)
                     )
                     logging.info(f"电视剧：{title} 第{season}季 已入库，无需下载订阅！")
                 else:
@@ -320,18 +340,24 @@ def update_alias_subscriptions(cursor):
     """更新别名订阅记录，将别名映射到实际剧集"""
     # 查找所有在MISS_TVS中存在别名关联的记录
     cursor.execute('''
-        SELECT mt.id, mt.title, mt.season, mt.missing_episodes, mt.year, lta.TARGET_TITLE, lta.TARGET_SEASON
+        SELECT mt.id, mt.title, mt.season, mt.missing_episodes, mt.year, mt.tmdb_id, lta.TARGET_TITLE, lta.TARGET_SEASON
         FROM MISS_TVS mt
         JOIN LIB_TV_ALIAS lta ON mt.title = lta.ALIAS
     ''')
     
     alias_records = cursor.fetchall()
     
-    for record_id, alias_title, alias_season, missing_episodes, year, target_title, target_season in alias_records:
-        # 检查目标剧集是否存在（不匹配年份）
-        lib_tv_row = cursor.execute(
-            'SELECT id FROM LIB_TVS WHERE title = ?', (target_title,)
-        ).fetchone()
+    for record_id, alias_title, alias_season, missing_episodes, year, miss_tmdb_id, target_title, target_season in alias_records:
+        # 优先用 tmdb_id 查找目标剧集，无 tmdb_id 时回退到 target_title 匹配
+        # 修复：原代码仅用 target_title 匹配，媒体库标题变化后别名订阅无法清理
+        if miss_tmdb_id:
+            lib_tv_row = cursor.execute(
+                'SELECT id FROM LIB_TVS WHERE tmdb_id = ?', (miss_tmdb_id,)
+            ).fetchone()
+        else:
+            lib_tv_row = cursor.execute(
+                'SELECT id FROM LIB_TVS WHERE title = ?', (target_title,)
+            ).fetchone()
         
         if lib_tv_row:
             tv_id = lib_tv_row[0]
@@ -521,9 +547,10 @@ def update_tmdb_items(cursor):
                                 tmdb_episodes_set = set(range(1, tmdb_episodes_count + 1))
                                 
                                 # 获取本地已存在的集数（从 LIB_TV_SEASONS 表中获取）
+                                # 修复：优先用刚获取的 tmdb_id 查 LIB_TVS，避免标题不一致导致查询失败
                                 existing_episodes_str = cursor.execute(
-                                    '''SELECT episodes FROM LIB_TV_SEASONS WHERE tv_id = (SELECT id FROM LIB_TVS WHERE title = ? AND year = ?) AND season = ?''',
-                                    (local_title, year, season)
+                                    '''SELECT episodes FROM LIB_TV_SEASONS WHERE tv_id = (SELECT id FROM LIB_TVS WHERE tmdb_id = ?) AND season = ?''',
+                                    (tmdb_id, season)
                                 ).fetchone()
                                 
                                 if existing_episodes_str:

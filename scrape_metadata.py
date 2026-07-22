@@ -1022,6 +1022,14 @@ def query_tmdb_id(title, year, media_type, config):
             elif media_type == 'tv':
                 cursor.execute("SELECT tmdb_id FROM LIB_TVS WHERE title = ? AND year = ?", (title, year))
             result = cursor.fetchone()
+            # 修复：LIB_TVS 的 year 可能为 NULL（scan_media.py 插入时不写 year，依赖 update_tv_year 补全）
+            # 如果 title+year 查不到，回退到只查 title
+            if not result or not result[0]:
+                if media_type == 'movie':
+                    cursor.execute("SELECT tmdb_id FROM LIB_MOVIES WHERE title = ?", (title,))
+                elif media_type == 'tv':
+                    cursor.execute("SELECT tmdb_id FROM LIB_TVS WHERE title = ?", (title,))
+                result = cursor.fetchone()
             if result and result[0]:
                 tmdb_id = result[0]
                 tmdb_id_cache[cache_key] = tmdb_id  # 写入缓存
