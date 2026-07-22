@@ -2104,6 +2104,12 @@ def check_update():
         # 当前版本号
         current_version = APP_VERSION
 
+        # 读取 GITHUB_TOKEN 环境变量,用于 API 鉴权(提升速率限制 60→5000/小时)
+        github_token = os.environ.get('GITHUB_TOKEN', '').strip()
+        api_headers = {}
+        if github_token:
+            api_headers['Authorization'] = f'token {github_token}'
+
         # GitHub API 地址和代理地址
         repo_url = "https://api.github.com/repos/KK-325/mediamaster-v2/releases"
         latest_release_url = "https://api.github.com/repos/KK-325/mediamaster-v2/releases/latest"
@@ -2112,29 +2118,48 @@ def check_update():
 
         # 获取所有发布版本
         try:
-            response = requests.get(repo_url, timeout=5)
+            response = requests.get(repo_url, headers=api_headers, timeout=5)
             if response.status_code != 200:
                 raise Exception(f"主地址返回异常: {response.text}")
         except Exception as e:
             logger.warning(f"主地址连接失败，尝试代理: {e}")
-            response = requests.get(proxy_url, timeout=8)
-
-        if response.status_code != 200:
-            logger.error(f"无法获取 GitHub 版本信息: {response.text}")
-            return jsonify({"error": "无法连接到 GitHub，请稍后再试。"}), 500
+            try:
+                response = requests.get(proxy_url, headers=api_headers, timeout=8)
+            except Exception as e2:
+                logger.error(f"代理也失败: {e2}")
+                # 最终 fallback: 直接下载 versions 文件比对版本号
+                try:
+                    versions_url = "https://gh.llkk.cc/https://raw.githubusercontent.com/KK-325/mediamaster-v2/main/versions"
+                    raw_response = requests.get(versions_url, timeout=8)
+                    if raw_response.status_code == 200:
+                        latest_version = raw_response.text.strip()
+                        stable_update_available = compare_versions(current_version, latest_version)
+                        return jsonify({
+                            "current_version": current_version,
+                            "latest_stable_version": latest_version,
+                            "stable_release_notes": f"在线升级到 {latest_version}",
+                            "stable_update_available": stable_update_available,
+                            "latest_prerelease_version": None,
+                            "prerelease_release_notes": None,
+                            "prerelease_update_available": False,
+                        })
+                    return jsonify({"error": "无法连接到 GitHub，请稍后再试。"}), 500
+                except Exception as e3:
+                    logger.error(f"versions 文件下载也失败: {e3}")
+                    return jsonify({"error": "无法连接到 GitHub，请稍后再试。"}), 500
 
         releases = response.json()
         
         # 获取GitHub标记的最新稳定版本
         latest_stable_release = None
         try:
-            latest_response = requests.get(latest_release_url, timeout=5)
+            latest_response = requests.get(latest_release_url, headers=api_headers, timeout=5)
             if latest_response.status_code == 200:
                 latest_stable_release = latest_response.json()
         except Exception as e:
             logger.warning(f"获取latest release失败，尝试代理: {e}")
             try:
-                latest_response = requests.get(proxy_latest_url, timeout=8)
+                latest_response = requests.get(proxy_latest_url, headers=api_headers, timeout=8)
                 if latest_response.status_code == 200:
                     latest_stable_release = latest_response.json()
             except Exception as e2:
